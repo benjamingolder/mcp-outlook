@@ -201,12 +201,25 @@ app.post("/mcp", async (req, res) => {
     sessionIdGenerator: undefined,
   });
   const server = createMcpServer();
-  await server.connect(transport);
-  await transport.handleRequest(req, res, req.body);
+  try {
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (err) {
+    console.error("POST /mcp - Fehler:", err);
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: "2.0",
+        id: req.body?.id ?? null,
+        error: { code: -32603, message: (err as Error).message },
+      });
+    }
+  } finally {
+    await server.close();
+  }
 });
 
 app.get("/mcp", (_req, res) => {
-  res.json({ status: "ok", service: "mcp-outlook" });
+  res.status(405).json({ error: "Method Not Allowed. Use POST for MCP requests." });
 });
 
 // SSE Transport (älteres Protokoll)
