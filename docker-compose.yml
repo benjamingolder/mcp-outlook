@@ -1,0 +1,17 @@
+services:
+  mcp-outlook:
+    image: ghcr.io/benjamingolder/mcp-outlook:latest
+    container_name: mcp-outlook
+    environment:
+      CLIENT_ID: 5cc1a755-7f1d-4759-9365-20930f6ad850
+      TENANT_ID: fb5d451c-7084-4a3f-aae4-660c623db61a
+      TOKEN_CACHE_PATH: /data/token-cache.json
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - mcp-data:/data
+    restart: unless-stopped
+
+volumes:
+  mcp-data:
