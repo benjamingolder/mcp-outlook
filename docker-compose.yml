@@ -1,6 +1,7 @@
 services:
   mcp-outlook:
     image: ghcr.io/benjamingolder/mcp-outlook:latest
+    pull_policy: always
     container_name: mcp-outlook
     environment:
       CLIENT_ID: 5cc1a755-7f1d-4759-9365-20930f6ad850
