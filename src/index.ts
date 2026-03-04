@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -188,9 +189,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// StreamableHTTP Transport (neueres Protokoll)
 app.post("/mcp", async (req, res) => {
+  console.log("POST /mcp - body:", JSON.stringify(req.body));
   const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined, // stateless
+    sessionIdGenerator: undefined,
   });
   const server = createMcpServer();
   await server.connect(transport);
@@ -199,6 +202,28 @@ app.post("/mcp", async (req, res) => {
 
 app.get("/mcp", (_req, res) => {
   res.json({ status: "ok", service: "mcp-outlook" });
+});
+
+// SSE Transport (älteres Protokoll)
+const sseTransports = new Map<string, SSEServerTransport>();
+
+app.get("/sse", async (req, res) => {
+  console.log("GET /sse - neue Verbindung");
+  const transport = new SSEServerTransport("/messages", res);
+  sseTransports.set(transport.sessionId, transport);
+  res.on("close", () => sseTransports.delete(transport.sessionId));
+  const server = createMcpServer();
+  await server.connect(transport);
+});
+
+app.post("/messages", async (req, res) => {
+  const sessionId = req.query.sessionId as string;
+  const transport = sseTransports.get(sessionId);
+  if (!transport) {
+    res.status(404).json({ error: "Session nicht gefunden" });
+    return;
+  }
+  await transport.handlePostMessage(req, res);
 });
 
 app.get("/health", (_req, res) => {
