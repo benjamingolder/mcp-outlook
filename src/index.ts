@@ -189,6 +189,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use((req, _res, next) => {
+  console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
+  next();
+});
+
 // StreamableHTTP Transport (neueres Protokoll)
 app.post("/mcp", async (req, res) => {
   console.log("POST /mcp - body:", JSON.stringify(req.body));
