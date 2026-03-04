@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
@@ -184,6 +185,7 @@ function createMcpServer(): Server {
 
 // Express HTTP-Server
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.post("/mcp", async (req, res) => {
