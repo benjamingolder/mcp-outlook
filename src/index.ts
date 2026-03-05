@@ -194,7 +194,7 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Bearer Token Authentifizierung (außer /health)
+// API Key Authentifizierung (außer /health)
 app.use((req, res, next) => {
   if (req.path === "/health") return next();
 
@@ -202,7 +202,12 @@ app.use((req, res, next) => {
   if (!apiKey) return next(); // Kein Key konfiguriert → offen
 
   const authHeader = req.headers["authorization"];
-  if (!authHeader || authHeader !== `Bearer ${apiKey}`) {
+  const queryKey = req.query["apikey"];
+
+  const validHeader = authHeader === `Bearer ${apiKey}`;
+  const validQuery = queryKey === apiKey;
+
+  if (!validHeader && !validQuery) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
