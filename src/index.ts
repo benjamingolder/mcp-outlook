@@ -194,6 +194,21 @@ app.use((req, _res, next) => {
   next();
 });
 
+// Bearer Token Authentifizierung (außer /health)
+app.use((req, res, next) => {
+  if (req.path === "/health") return next();
+
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) return next(); // Kein Key konfiguriert → offen
+
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || authHeader !== `Bearer ${apiKey}`) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  next();
+});
+
 // StreamableHTTP Transport (neueres Protokoll)
 app.post("/mcp", async (req, res) => {
   console.log("POST /mcp - body:", JSON.stringify(req.body));
