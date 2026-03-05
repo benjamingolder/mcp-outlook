@@ -1,74 +1,27 @@
-import {
-  PublicClientApplication,
-  type TokenCacheContext,
-} from "@azure/msal-node";
-import * as fs from "fs";
-import * as path from "path";
+import { ConfidentialClientApplication } from "@azure/msal-node";
 
-const CACHE_PATH = process.env.TOKEN_CACHE_PATH ?? "/data/token-cache.json";
+const SCOPE = "https://graph.microsoft.com/.default";
 
-export const SCOPES = [
-  "https://graph.microsoft.com/Mail.Read",
-  "https://graph.microsoft.com/Mail.Send",
-  "https://graph.microsoft.com/Calendars.Read",
-  "https://graph.microsoft.com/Calendars.ReadWrite",
-  "offline_access",
-];
+let cca: ConfidentialClientApplication | null = null;
 
-const cachePlugin = {
-  beforeCacheAccess: async (ctx: TokenCacheContext) => {
-    if (fs.existsSync(CACHE_PATH)) {
-      ctx.tokenCache.deserialize(await fs.promises.readFile(CACHE_PATH, "utf8"));
-    }
-  },
-  afterCacheAccess: async (ctx: TokenCacheContext) => {
-    if (ctx.cacheHasChanged) {
-      await fs.promises.mkdir(path.dirname(CACHE_PATH), { recursive: true });
-      await fs.promises.writeFile(CACHE_PATH, ctx.tokenCache.serialize());
-    }
-  },
-};
-
-let pca: PublicClientApplication | null = null;
-
-function getApp(): PublicClientApplication {
-  if (!pca) {
-    pca = new PublicClientApplication({
+function getApp(): ConfidentialClientApplication {
+  if (!cca) {
+    cca = new ConfidentialClientApplication({
       auth: {
         clientId: process.env.CLIENT_ID!,
+        clientSecret: process.env.CLIENT_SECRET!,
         authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`,
       },
-      cache: { cachePlugin },
     });
   }
-  return pca;
+  return cca;
 }
 
 export async function getAccessToken(): Promise<string> {
-  const app = getApp();
-  const accounts = await app.getTokenCache().getAllAccounts();
-
-  if (accounts.length === 0) {
-    throw new Error(
-      "Nicht authentifiziert. Bitte zuerst ausführen: docker exec mcp-outlook node dist/auth-setup.js"
-    );
-  }
-
-  const result = await app.acquireTokenSilent({
-    account: accounts[0],
-    scopes: SCOPES,
+  const result = await getApp().acquireTokenByClientCredential({
+    scopes: [SCOPE],
   });
 
-  if (!result) throw new Error("Token konnte nicht erneuert werden.");
+  if (!result) throw new Error("Token konnte nicht abgerufen werden.");
   return result.accessToken;
-}
-
-export async function doDeviceCodeFlow(): Promise<void> {
-  const app = getApp();
-  await app.acquireTokenByDeviceCode({
-    deviceCodeCallback: (response) => {
-      console.log("\n" + response.message + "\n");
-    },
-    scopes: SCOPES,
-  });
 }

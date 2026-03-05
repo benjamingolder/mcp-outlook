@@ -1,12 +1,11 @@
 import "dotenv/config";
-import { doDeviceCodeFlow } from "./auth.js";
+import { getAccessToken } from "./auth.js";
 
-console.log("=== MCP Outlook – Authentifizierung ===\n");
-console.log("Folge den Anweisungen um dein Microsoft-Konto zu verbinden:\n");
+console.log("=== MCP Outlook – Verbindungstest ===\n");
 
-doDeviceCodeFlow()
+getAccessToken()
   .then(() => {
-    console.log("\n✓ Authentifizierung erfolgreich! Der MCP Server kann nun gestartet werden.");
+    console.log("✓ Client Credentials erfolgreich! Der MCP Server kann gestartet werden.");
     process.exit(0);
   })
   .catch((err: Error) => {
