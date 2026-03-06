@@ -20,18 +20,21 @@ import {
 } from "./tools/calendar.js";
 import { listTodoLists, listTasks, createTask, updateTask, deleteTask } from "./tools/todo.js";
 import {
-  listSharepointSites,
-  listSharepointFiles,
-  searchSharepoint,
-  listSharepointLists,
-  createSharepointList,
-  listSharepointListItems,
-  getSharepointListItem,
-  createSharepointListItem,
-  updateSharepointListItem,
-  deleteSharepointListItem,
+  listSharepointSites, listSharepointFiles, searchSharepoint,
+  listSharepointLists, createSharepointList,
+  listSharepointListItems, getSharepointListItem,
+  createSharepointListItem, updateSharepointListItem, deleteSharepointListItem,
 } from "./tools/sharepoint.js";
 import { listOneDriveFiles, searchOneDrive, getOneDriveFileInfo } from "./tools/onedrive.js";
+import { listContacts, getContact, createContact, updateContact, deleteContact } from "./tools/contacts.js";
+import { listTeams, listChannels, listChannelMessages, sendChannelMessage, listChats, listChatMessages, sendChatMessage } from "./tools/teams.js";
+import { listNotebooks, listSections, listPages, getPage, createPage } from "./tools/onenote.js";
+import { listPlans, listMyPlannerTasks, listBuckets, listPlanTasks, createPlannerTask, updatePlannerTask, deletePlannerTask } from "./tools/planner.js";
+import { listWorksheets, getRange, updateRange, getUsedRange } from "./tools/excel.js";
+import { listRelevantPeople, listTrendingDocuments, listUsedDocuments, listSharedDocuments } from "./tools/people.js";
+import { listUsers, getUser, listGroups, listGroupMembers, addGroupMember, removeGroupMember } from "./tools/directory.js";
+import { getMyPresence, getUserPresence, getPresenceForUsers, setMyPresence } from "./tools/presence.js";
+import { listBookingBusinesses, listBookingServices, listBookingAppointments, createBookingAppointment, cancelBookingAppointment } from "./tools/bookings.js";
 
 function createMcpServer(): Server {
   const server = new Server(
@@ -401,6 +404,417 @@ function createMcpServer(): Server {
           required: ["fileId"],
         },
       },
+      // ── Contacts ─────────────────────────────────────────────────────
+      {
+        name: "list_contacts",
+        description: "Listet Outlook-Kontakte auf",
+        inputSchema: {
+          type: "object",
+          properties: {
+            top: { type: "number", description: "Anzahl (Standard: 20)" },
+            filter: { type: "string", description: "OData-Filter" },
+            search: { type: "string", description: "Suchbegriff (Name/Email)" },
+          },
+        },
+      },
+      {
+        name: "get_contact",
+        description: "Liest einen Kontakt",
+        inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+      },
+      {
+        name: "create_contact",
+        description: "Erstellt einen neuen Outlook-Kontakt",
+        inputSchema: {
+          type: "object",
+          properties: {
+            givenName: { type: "string", description: "Vorname" },
+            surname: { type: "string", description: "Nachname" },
+            emailAddresses: { type: "array", items: { type: "object", properties: { address: { type: "string" }, name: { type: "string" } } } },
+            mobilePhone: { type: "string" },
+            businessPhones: { type: "array", items: { type: "string" } },
+            jobTitle: { type: "string" },
+            companyName: { type: "string" },
+            department: { type: "string" },
+          },
+          required: ["givenName"],
+        },
+      },
+      {
+        name: "update_contact",
+        description: "Aktualisiert einen Outlook-Kontakt",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            givenName: { type: "string" }, surname: { type: "string" },
+            emailAddresses: { type: "array", items: { type: "object" } },
+            mobilePhone: { type: "string" }, jobTitle: { type: "string" },
+            companyName: { type: "string" }, department: { type: "string" },
+            personalNotes: { type: "string" },
+          },
+          required: ["id"],
+        },
+      },
+      {
+        name: "delete_contact",
+        description: "Löscht einen Outlook-Kontakt",
+        inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+      },
+      // ── Teams ─────────────────────────────────────────────────────────
+      {
+        name: "list_teams",
+        description: "Listet alle Teams auf, denen du angehörst",
+        inputSchema: { type: "object", properties: { top: { type: "number" } } },
+      },
+      {
+        name: "list_channels",
+        description: "Listet Kanäle eines Teams auf",
+        inputSchema: { type: "object", properties: { teamId: { type: "string" } }, required: ["teamId"] },
+      },
+      {
+        name: "list_channel_messages",
+        description: "Liest Nachrichten aus einem Teams-Kanal",
+        inputSchema: {
+          type: "object",
+          properties: {
+            teamId: { type: "string" }, channelId: { type: "string" },
+            top: { type: "number", description: "Anzahl (Standard: 20)" },
+          },
+          required: ["teamId", "channelId"],
+        },
+      },
+      {
+        name: "send_channel_message",
+        description: "Sendet eine Nachricht in einen Teams-Kanal",
+        inputSchema: {
+          type: "object",
+          properties: {
+            teamId: { type: "string" }, channelId: { type: "string" },
+            content: { type: "string" },
+            contentType: { type: "string", enum: ["text", "html"] },
+            subject: { type: "string" },
+          },
+          required: ["teamId", "channelId", "content"],
+        },
+      },
+      {
+        name: "list_chats",
+        description: "Listet Teams-Chats auf",
+        inputSchema: { type: "object", properties: { top: { type: "number" } } },
+      },
+      {
+        name: "list_chat_messages",
+        description: "Liest Nachrichten aus einem Teams-Chat",
+        inputSchema: {
+          type: "object",
+          properties: { chatId: { type: "string" }, top: { type: "number" } },
+          required: ["chatId"],
+        },
+      },
+      {
+        name: "send_chat_message",
+        description: "Sendet eine Nachricht in einen Teams-Chat",
+        inputSchema: {
+          type: "object",
+          properties: {
+            chatId: { type: "string" }, content: { type: "string" },
+            contentType: { type: "string", enum: ["text", "html"] },
+          },
+          required: ["chatId", "content"],
+        },
+      },
+      // ── OneNote ───────────────────────────────────────────────────────
+      {
+        name: "list_notebooks",
+        description: "Listet OneNote-Notizbücher auf",
+        inputSchema: { type: "object", properties: { top: { type: "number" } } },
+      },
+      {
+        name: "list_sections",
+        description: "Listet Abschnitte eines Notizbuchs auf",
+        inputSchema: { type: "object", properties: { notebookId: { type: "string" } }, required: ["notebookId"] },
+      },
+      {
+        name: "list_pages",
+        description: "Listet Seiten eines OneNote-Abschnitts auf",
+        inputSchema: {
+          type: "object",
+          properties: { sectionId: { type: "string" }, top: { type: "number" } },
+          required: ["sectionId"],
+        },
+      },
+      {
+        name: "get_page",
+        description: "Liest den HTML-Inhalt einer OneNote-Seite",
+        inputSchema: { type: "object", properties: { pageId: { type: "string" } }, required: ["pageId"] },
+      },
+      {
+        name: "create_page",
+        description: "Erstellt eine neue OneNote-Seite",
+        inputSchema: {
+          type: "object",
+          properties: {
+            sectionId: { type: "string" }, title: { type: "string" },
+            content: { type: "string", description: "HTML-Inhalt der Seite" },
+          },
+          required: ["sectionId", "title"],
+        },
+      },
+      // ── Planner ───────────────────────────────────────────────────────
+      {
+        name: "list_my_planner_tasks",
+        description: "Listet alle Planner-Aufgaben auf, die dir zugewiesen sind",
+        inputSchema: { type: "object", properties: { top: { type: "number" } } },
+      },
+      {
+        name: "list_plans",
+        description: "Listet Pläne einer Microsoft 365 Gruppe auf",
+        inputSchema: { type: "object", properties: { groupId: { type: "string" } }, required: ["groupId"] },
+      },
+      {
+        name: "list_buckets",
+        description: "Listet Buckets (Spalten) eines Planner-Plans auf",
+        inputSchema: { type: "object", properties: { planId: { type: "string" } }, required: ["planId"] },
+      },
+      {
+        name: "list_plan_tasks",
+        description: "Listet alle Aufgaben eines Planner-Plans auf",
+        inputSchema: { type: "object", properties: { planId: { type: "string" } }, required: ["planId"] },
+      },
+      {
+        name: "create_planner_task",
+        description: "Erstellt eine neue Planner-Aufgabe",
+        inputSchema: {
+          type: "object",
+          properties: {
+            planId: { type: "string" }, title: { type: "string" },
+            bucketId: { type: "string" }, dueDateTime: { type: "string" },
+            assignedToUserIds: { type: "array", items: { type: "string" } },
+            priority: { type: "number", description: "0 (dringend) bis 9 (unwichtig)" },
+          },
+          required: ["planId", "title"],
+        },
+      },
+      {
+        name: "update_planner_task",
+        description: "Aktualisiert eine Planner-Aufgabe",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "string" }, title: { type: "string" },
+            percentComplete: { type: "number", description: "0, 50 oder 100" },
+            dueDateTime: { type: "string" }, priority: { type: "number" }, bucketId: { type: "string" },
+          },
+          required: ["taskId"],
+        },
+      },
+      {
+        name: "delete_planner_task",
+        description: "Löscht eine Planner-Aufgabe",
+        inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] },
+      },
+      // ── Excel ─────────────────────────────────────────────────────────
+      {
+        name: "list_worksheets",
+        description: "Listet Tabellenblätter einer Excel-Datei auf",
+        inputSchema: {
+          type: "object",
+          properties: { fileId: { type: "string" }, driveId: { type: "string", description: "Optional: Drive-ID (z.B. SharePoint)" } },
+          required: ["fileId"],
+        },
+      },
+      {
+        name: "get_range",
+        description: "Liest einen Zellenbereich aus einer Excel-Datei",
+        inputSchema: {
+          type: "object",
+          properties: {
+            fileId: { type: "string" }, worksheetId: { type: "string" },
+            address: { type: "string", description: "z.B. A1:C10" }, driveId: { type: "string" },
+          },
+          required: ["fileId", "worksheetId", "address"],
+        },
+      },
+      {
+        name: "get_used_range",
+        description: "Liest den gesamten benutzten Bereich eines Tabellenblatts",
+        inputSchema: {
+          type: "object",
+          properties: { fileId: { type: "string" }, worksheetId: { type: "string" }, driveId: { type: "string" } },
+          required: ["fileId", "worksheetId"],
+        },
+      },
+      {
+        name: "update_range",
+        description: "Schreibt Werte in einen Zellenbereich einer Excel-Datei",
+        inputSchema: {
+          type: "object",
+          properties: {
+            fileId: { type: "string" }, worksheetId: { type: "string" },
+            address: { type: "string" },
+            values: { type: "array", items: { type: "array" }, description: "2D-Array mit Zellenwerten" },
+            driveId: { type: "string" },
+          },
+          required: ["fileId", "worksheetId", "address", "values"],
+        },
+      },
+      // ── People & Insights ─────────────────────────────────────────────
+      {
+        name: "list_relevant_people",
+        description: "Listet relevante Personen basierend auf deiner Kommunikation auf",
+        inputSchema: { type: "object", properties: { top: { type: "number" }, search: { type: "string" } } },
+      },
+      {
+        name: "list_trending_documents",
+        description: "Listet Dokumente auf, die gerade in deinem Umfeld trending sind",
+        inputSchema: { type: "object", properties: { top: { type: "number" } } },
+      },
+      {
+        name: "list_used_documents",
+        description: "Listet zuletzt verwendete Dokumente auf",
+        inputSchema: { type: "object", properties: { top: { type: "number" } } },
+      },
+      {
+        name: "list_shared_documents",
+        description: "Listet Dokumente auf, die mit dir geteilt wurden",
+        inputSchema: { type: "object", properties: { top: { type: "number" } } },
+      },
+      // ── Directory ─────────────────────────────────────────────────────
+      {
+        name: "list_users",
+        description: "Listet Benutzer im Tenant auf",
+        inputSchema: {
+          type: "object",
+          properties: { top: { type: "number" }, filter: { type: "string" }, search: { type: "string", description: "Suche nach Displayname" } },
+        },
+      },
+      {
+        name: "get_user",
+        description: "Liest Details eines Benutzers",
+        inputSchema: { type: "object", properties: { userId: { type: "string", description: "ID oder UPN" } }, required: ["userId"] },
+      },
+      {
+        name: "list_groups",
+        description: "Listet Gruppen im Tenant auf",
+        inputSchema: {
+          type: "object",
+          properties: { top: { type: "number" }, filter: { type: "string" }, search: { type: "string" } },
+        },
+      },
+      {
+        name: "list_group_members",
+        description: "Listet Mitglieder einer Gruppe auf",
+        inputSchema: {
+          type: "object",
+          properties: { groupId: { type: "string" }, top: { type: "number" } },
+          required: ["groupId"],
+        },
+      },
+      {
+        name: "add_group_member",
+        description: "Fügt einen Benutzer zu einer Gruppe hinzu",
+        inputSchema: {
+          type: "object",
+          properties: { groupId: { type: "string" }, userId: { type: "string" } },
+          required: ["groupId", "userId"],
+        },
+      },
+      {
+        name: "remove_group_member",
+        description: "Entfernt einen Benutzer aus einer Gruppe",
+        inputSchema: {
+          type: "object",
+          properties: { groupId: { type: "string" }, userId: { type: "string" } },
+          required: ["groupId", "userId"],
+        },
+      },
+      // ── Presence ──────────────────────────────────────────────────────
+      {
+        name: "get_my_presence",
+        description: "Liest deinen eigenen Teams-Präsenzstatus",
+        inputSchema: { type: "object", properties: {} },
+      },
+      {
+        name: "get_user_presence",
+        description: "Liest den Präsenzstatus eines bestimmten Benutzers",
+        inputSchema: { type: "object", properties: { userId: { type: "string" } }, required: ["userId"] },
+      },
+      {
+        name: "get_presence_for_users",
+        description: "Liest den Präsenzstatus mehrerer Benutzer auf einmal",
+        inputSchema: {
+          type: "object",
+          properties: { userIds: { type: "array", items: { type: "string" } } },
+          required: ["userIds"],
+        },
+      },
+      {
+        name: "set_my_presence",
+        description: "Setzt deinen eigenen Teams-Präsenzstatus",
+        inputSchema: {
+          type: "object",
+          properties: {
+            availability: { type: "string", enum: ["Available", "Busy", "DoNotDisturb", "BeRightBack", "Away", "Offline"] },
+            activity: { type: "string", description: "z.B. Available, InACall, InAMeeting, Away" },
+            expirationDuration: { type: "string", description: "ISO 8601 Dauer, z.B. PT1H (Standard: 1 Stunde)" },
+          },
+          required: ["availability", "activity"],
+        },
+      },
+      // ── Bookings ──────────────────────────────────────────────────────
+      {
+        name: "list_booking_businesses",
+        description: "Listet alle Microsoft Bookings Unternehmen auf",
+        inputSchema: { type: "object", properties: {} },
+      },
+      {
+        name: "list_booking_services",
+        description: "Listet Services eines Bookings-Unternehmens auf",
+        inputSchema: { type: "object", properties: { businessId: { type: "string" } }, required: ["businessId"] },
+      },
+      {
+        name: "list_booking_appointments",
+        description: "Listet Termine eines Bookings-Unternehmens auf",
+        inputSchema: {
+          type: "object",
+          properties: {
+            businessId: { type: "string" },
+            start: { type: "string", description: "Von (ISO 8601)" },
+            end: { type: "string", description: "Bis (ISO 8601)" },
+          },
+          required: ["businessId"],
+        },
+      },
+      {
+        name: "create_booking_appointment",
+        description: "Erstellt einen neuen Bookings-Termin",
+        inputSchema: {
+          type: "object",
+          properties: {
+            businessId: { type: "string" }, serviceId: { type: "string" },
+            startDateTime: { type: "string" }, endDateTime: { type: "string" },
+            timeZone: { type: "string", description: "Standard: Europe/Berlin" },
+            customerName: { type: "string" }, customerEmail: { type: "string" },
+            customerPhone: { type: "string" },
+            staffMemberIds: { type: "array", items: { type: "string" } },
+            notes: { type: "string" },
+          },
+          required: ["businessId", "serviceId", "startDateTime", "endDateTime", "customerName", "customerEmail"],
+        },
+      },
+      {
+        name: "cancel_booking_appointment",
+        description: "Storniert einen Bookings-Termin",
+        inputSchema: {
+          type: "object",
+          properties: {
+            businessId: { type: "string" }, appointmentId: { type: "string" },
+            reason: { type: "string" },
+          },
+          required: ["businessId", "appointmentId"],
+        },
+      },
     ],
   }));
 
@@ -440,7 +854,63 @@ function createMcpServer(): Server {
         // OneDrive
         case "list_onedrive_files":   result = await listOneDriveFiles(args as any); break;
         case "search_onedrive":       result = await searchOneDrive(args as any); break;
-        case "get_onedrive_file_info":result = await getOneDriveFileInfo(args as any); break;
+        case "get_onedrive_file_info":         result = await getOneDriveFileInfo(args as any); break;
+        // Contacts
+        case "list_contacts":                  result = await listContacts(args as any); break;
+        case "get_contact":                    result = await getContact((args as any).id); break;
+        case "create_contact":                 result = await createContact(args as any); break;
+        case "update_contact":                 result = await updateContact(args as any); break;
+        case "delete_contact":                 result = await deleteContact((args as any).id); break;
+        // Teams
+        case "list_teams":                     result = await listTeams(args as any); break;
+        case "list_channels":                  result = await listChannels(args as any); break;
+        case "list_channel_messages":          result = await listChannelMessages(args as any); break;
+        case "send_channel_message":           result = await sendChannelMessage(args as any); break;
+        case "list_chats":                     result = await listChats(args as any); break;
+        case "list_chat_messages":             result = await listChatMessages(args as any); break;
+        case "send_chat_message":              result = await sendChatMessage(args as any); break;
+        // OneNote
+        case "list_notebooks":                 result = await listNotebooks(args as any); break;
+        case "list_sections":                  result = await listSections(args as any); break;
+        case "list_pages":                     result = await listPages(args as any); break;
+        case "get_page":                       result = await getPage(args as any); break;
+        case "create_page":                    result = await createPage(args as any); break;
+        // Planner
+        case "list_my_planner_tasks":          result = await listMyPlannerTasks(args as any); break;
+        case "list_plans":                     result = await listPlans(args as any); break;
+        case "list_buckets":                   result = await listBuckets(args as any); break;
+        case "list_plan_tasks":                result = await listPlanTasks(args as any); break;
+        case "create_planner_task":            result = await createPlannerTask(args as any); break;
+        case "update_planner_task":            result = await updatePlannerTask(args as any); break;
+        case "delete_planner_task":            result = await deletePlannerTask(args as any); break;
+        // Excel
+        case "list_worksheets":                result = await listWorksheets(args as any); break;
+        case "get_range":                      result = await getRange(args as any); break;
+        case "get_used_range":                 result = await getUsedRange(args as any); break;
+        case "update_range":                   result = await updateRange(args as any); break;
+        // People & Insights
+        case "list_relevant_people":           result = await listRelevantPeople(args as any); break;
+        case "list_trending_documents":        result = await listTrendingDocuments(args as any); break;
+        case "list_used_documents":            result = await listUsedDocuments(args as any); break;
+        case "list_shared_documents":          result = await listSharedDocuments(args as any); break;
+        // Directory
+        case "list_users":                     result = await listUsers(args as any); break;
+        case "get_user":                       result = await getUser(args as any); break;
+        case "list_groups":                    result = await listGroups(args as any); break;
+        case "list_group_members":             result = await listGroupMembers(args as any); break;
+        case "add_group_member":               result = await addGroupMember(args as any); break;
+        case "remove_group_member":            result = await removeGroupMember(args as any); break;
+        // Presence
+        case "get_my_presence":                result = await getMyPresence(); break;
+        case "get_user_presence":              result = await getUserPresence(args as any); break;
+        case "get_presence_for_users":         result = await getPresenceForUsers(args as any); break;
+        case "set_my_presence":                result = await setMyPresence(args as any); break;
+        // Bookings
+        case "list_booking_businesses":        result = await listBookingBusinesses(); break;
+        case "list_booking_services":          result = await listBookingServices(args as any); break;
+        case "list_booking_appointments":      result = await listBookingAppointments(args as any); break;
+        case "create_booking_appointment":     result = await createBookingAppointment(args as any); break;
+        case "cancel_booking_appointment":     result = await cancelBookingAppointment(args as any); break;
         default:
           throw new McpError(ErrorCode.MethodNotFound, `Unbekanntes Tool: ${name}`);
       }
