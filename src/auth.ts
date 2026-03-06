@@ -12,6 +12,9 @@ export const SCOPES = [
   "https://graph.microsoft.com/Mail.Send",
   "https://graph.microsoft.com/Calendars.Read",
   "https://graph.microsoft.com/Calendars.ReadWrite",
+  "https://graph.microsoft.com/Tasks.ReadWrite",
+  "https://graph.microsoft.com/Sites.Read.All",
+  "https://graph.microsoft.com/Files.Read.All",
   "offline_access",
 ];
 

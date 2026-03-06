@@ -18,6 +18,9 @@ import {
   updateEvent,
   deleteEvent,
 } from "./tools/calendar.js";
+import { listTodoLists, listTasks, createTask, updateTask, deleteTask } from "./tools/todo.js";
+import { listSharepointSites, listSharepointFiles, searchSharepoint } from "./tools/sharepoint.js";
+import { listOneDriveFiles, searchOneDrive, getOneDriveFileInfo } from "./tools/onedrive.js";
 
 function createMcpServer(): Server {
   const server = new Server(
@@ -146,6 +149,142 @@ function createMcpServer(): Server {
           required: ["id"],
         },
       },
+      // ── Microsoft To Do ──────────────────────────────────────────────
+      {
+        name: "list_todo_lists",
+        description: "Listet alle Microsoft To Do Aufgabenlisten auf",
+        inputSchema: { type: "object", properties: {} },
+      },
+      {
+        name: "list_tasks",
+        description: "Listet Aufgaben einer To Do Liste auf",
+        inputSchema: {
+          type: "object",
+          properties: {
+            listId: { type: "string", description: "ID der Aufgabenliste" },
+            filter: { type: "string", description: "OData-Filter, z.B. 'status eq \\'notStarted\\''" },
+            top: { type: "number", description: "Anzahl der Aufgaben (Standard: 20)" },
+          },
+          required: ["listId"],
+        },
+      },
+      {
+        name: "create_task",
+        description: "Erstellt eine neue Aufgabe in einer To Do Liste",
+        inputSchema: {
+          type: "object",
+          properties: {
+            listId: { type: "string", description: "ID der Aufgabenliste" },
+            title: { type: "string", description: "Titel der Aufgabe" },
+            body: { type: "string", description: "Beschreibung" },
+            dueDateTime: { type: "string", description: "Fälligkeitsdatum (ISO 8601 UTC)" },
+            importance: { type: "string", enum: ["low", "normal", "high"], description: "Priorität" },
+          },
+          required: ["listId", "title"],
+        },
+      },
+      {
+        name: "update_task",
+        description: "Aktualisiert eine Aufgabe (z.B. als erledigt markieren)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            listId: { type: "string", description: "ID der Aufgabenliste" },
+            taskId: { type: "string", description: "ID der Aufgabe" },
+            title: { type: "string" },
+            status: { type: "string", enum: ["notStarted", "inProgress", "completed", "waitingOnOthers", "deferred"] },
+            importance: { type: "string", enum: ["low", "normal", "high"] },
+            dueDateTime: { type: "string", description: "Fälligkeitsdatum (ISO 8601 UTC)" },
+            body: { type: "string" },
+          },
+          required: ["listId", "taskId"],
+        },
+      },
+      {
+        name: "delete_task",
+        description: "Löscht eine Aufgabe aus einer To Do Liste",
+        inputSchema: {
+          type: "object",
+          properties: {
+            listId: { type: "string", description: "ID der Aufgabenliste" },
+            taskId: { type: "string", description: "ID der Aufgabe" },
+          },
+          required: ["listId", "taskId"],
+        },
+      },
+      // ── SharePoint ───────────────────────────────────────────────────
+      {
+        name: "list_sharepoint_sites",
+        description: "Listet SharePoint-Seiten auf oder sucht nach einer bestimmten",
+        inputSchema: {
+          type: "object",
+          properties: {
+            search: { type: "string", description: "Suchbegriff für Site-Name (leer = alle)" },
+            top: { type: "number", description: "Anzahl der Ergebnisse (Standard: 10)" },
+          },
+        },
+      },
+      {
+        name: "list_sharepoint_files",
+        description: "Listet Dateien und Ordner in einer SharePoint-Dokumentbibliothek auf",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            driveId: { type: "string", description: "ID der Dokumentbibliothek (optional)" },
+            folderId: { type: "string", description: "ID des Unterordners (optional)" },
+            top: { type: "number", description: "Anzahl der Ergebnisse (Standard: 20)" },
+          },
+          required: ["siteId"],
+        },
+      },
+      {
+        name: "search_sharepoint",
+        description: "Sucht nach Dateien und Inhalten in SharePoint und OneDrive",
+        inputSchema: {
+          type: "object",
+          properties: {
+            query: { type: "string", description: "Suchbegriff" },
+            top: { type: "number", description: "Anzahl der Ergebnisse (Standard: 10)" },
+          },
+          required: ["query"],
+        },
+      },
+      // ── OneDrive ─────────────────────────────────────────────────────
+      {
+        name: "list_onedrive_files",
+        description: "Listet Dateien und Ordner in OneDrive auf",
+        inputSchema: {
+          type: "object",
+          properties: {
+            folderId: { type: "string", description: "ID des Ordners (leer = Root)" },
+            top: { type: "number", description: "Anzahl der Ergebnisse (Standard: 20)" },
+          },
+        },
+      },
+      {
+        name: "search_onedrive",
+        description: "Sucht nach Dateien in OneDrive",
+        inputSchema: {
+          type: "object",
+          properties: {
+            query: { type: "string", description: "Suchbegriff (Dateiname oder Inhalt)" },
+            top: { type: "number", description: "Anzahl der Ergebnisse (Standard: 20)" },
+          },
+          required: ["query"],
+        },
+      },
+      {
+        name: "get_onedrive_file_info",
+        description: "Ruft Details und Download-Link einer OneDrive-Datei ab",
+        inputSchema: {
+          type: "object",
+          properties: {
+            fileId: { type: "string", description: "ID der Datei" },
+          },
+          required: ["fileId"],
+        },
+      },
     ],
   }));
 
@@ -164,7 +303,21 @@ function createMcpServer(): Server {
         case "get_event":       result = await getEvent((args as any).id); break;
         case "create_event":    result = await createEvent(args as any); break;
         case "update_event":    result = await updateEvent(args as any); break;
-        case "delete_event":    result = await deleteEvent((args as any).id); break;
+        case "delete_event":          result = await deleteEvent((args as any).id); break;
+        // To Do
+        case "list_todo_lists":       result = await listTodoLists(); break;
+        case "list_tasks":            result = await listTasks(args as any); break;
+        case "create_task":           result = await createTask(args as any); break;
+        case "update_task":           result = await updateTask(args as any); break;
+        case "delete_task":           result = await deleteTask(args as any); break;
+        // SharePoint
+        case "list_sharepoint_sites": result = await listSharepointSites(args as any); break;
+        case "list_sharepoint_files": result = await listSharepointFiles(args as any); break;
+        case "search_sharepoint":     result = await searchSharepoint(args as any); break;
+        // OneDrive
+        case "list_onedrive_files":   result = await listOneDriveFiles(args as any); break;
+        case "search_onedrive":       result = await searchOneDrive(args as any); break;
+        case "get_onedrive_file_info":result = await getOneDriveFileInfo(args as any); break;
         default:
           throw new McpError(ErrorCode.MethodNotFound, `Unbekanntes Tool: ${name}`);
       }
