@@ -49,6 +49,145 @@ export async function listSharepointFiles(params: {
   }));
 }
 
+export async function listSharepointLists(params: { siteId: string; top?: number }) {
+  const { siteId, top = 20 } = params;
+  const client = getGraphClient();
+
+  const result = await client.api(`/sites/${siteId}/lists`).top(top).get();
+  return result.value.map((l: any) => ({
+    id: l.id,
+    name: l.name,
+    displayName: l.displayName,
+    webUrl: l.webUrl,
+    listType: l.list?.template ?? null,
+    createdDateTime: l.createdDateTime,
+  }));
+}
+
+export async function createSharepointList(params: {
+  siteId: string;
+  displayName: string;
+  description?: string;
+  columns: { name: string; type: "text" | "number" | "boolean" | "dateTime" | "choice"; choices?: string[] }[];
+}) {
+  const { siteId, displayName, description, columns } = params;
+  const client = getGraphClient();
+
+  const columnDefs = columns.map((col) => {
+    const def: Record<string, unknown> = { name: col.name };
+    if (col.type === "text") def.text = {};
+    else if (col.type === "number") def.number = {};
+    else if (col.type === "boolean") def.boolean = {};
+    else if (col.type === "dateTime") def.dateTime = {};
+    else if (col.type === "choice") def.choice = { choices: col.choices ?? [] };
+    return def;
+  });
+
+  const result = await client.api(`/sites/${siteId}/lists`).post({
+    displayName,
+    ...(description && { description }),
+    list: { template: "genericList" },
+    columns: columnDefs,
+  });
+
+  return {
+    id: result.id,
+    displayName: result.displayName,
+    webUrl: result.webUrl,
+  };
+}
+
+export async function listSharepointListItems(params: {
+  siteId: string;
+  listId: string;
+  top?: number;
+  filter?: string;
+}) {
+  const { siteId, listId, top = 20, filter } = params;
+  const client = getGraphClient();
+
+  let req = client
+    .api(`/sites/${siteId}/lists/${listId}/items`)
+    .expand("fields")
+    .top(top);
+
+  if (filter) req = req.filter(filter);
+
+  const result = await req.get();
+  return result.value.map((item: any) => ({
+    id: item.id,
+    createdDateTime: item.createdDateTime,
+    lastModifiedDateTime: item.lastModifiedDateTime,
+    webUrl: item.webUrl,
+    fields: item.fields,
+  }));
+}
+
+export async function getSharepointListItem(params: {
+  siteId: string;
+  listId: string;
+  itemId: string;
+}) {
+  const { siteId, listId, itemId } = params;
+  const client = getGraphClient();
+
+  const item = await client
+    .api(`/sites/${siteId}/lists/${listId}/items/${itemId}`)
+    .expand("fields")
+    .get();
+
+  return {
+    id: item.id,
+    createdDateTime: item.createdDateTime,
+    lastModifiedDateTime: item.lastModifiedDateTime,
+    webUrl: item.webUrl,
+    fields: item.fields,
+  };
+}
+
+export async function createSharepointListItem(params: {
+  siteId: string;
+  listId: string;
+  fields: Record<string, unknown>;
+}) {
+  const { siteId, listId, fields } = params;
+  const client = getGraphClient();
+
+  const result = await client
+    .api(`/sites/${siteId}/lists/${listId}/items`)
+    .post({ fields });
+
+  return { id: result.id, webUrl: result.webUrl, fields: result.fields };
+}
+
+export async function updateSharepointListItem(params: {
+  siteId: string;
+  listId: string;
+  itemId: string;
+  fields: Record<string, unknown>;
+}) {
+  const { siteId, listId, itemId, fields } = params;
+  const client = getGraphClient();
+
+  await client
+    .api(`/sites/${siteId}/lists/${listId}/items/${itemId}/fields`)
+    .patch(fields);
+
+  return { success: true, message: "Eintrag aktualisiert." };
+}
+
+export async function deleteSharepointListItem(params: {
+  siteId: string;
+  listId: string;
+  itemId: string;
+}) {
+  const { siteId, listId, itemId } = params;
+  const client = getGraphClient();
+
+  await client.api(`/sites/${siteId}/lists/${listId}/items/${itemId}`).delete();
+  return { success: true, message: "Eintrag gelöscht." };
+}
+
 export async function searchSharepoint(params: { query: string; top?: number }) {
   const { query, top = 10 } = params;
   const client = getGraphClient();

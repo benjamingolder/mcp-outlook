@@ -19,7 +19,18 @@ import {
   deleteEvent,
 } from "./tools/calendar.js";
 import { listTodoLists, listTasks, createTask, updateTask, deleteTask } from "./tools/todo.js";
-import { listSharepointSites, listSharepointFiles, searchSharepoint } from "./tools/sharepoint.js";
+import {
+  listSharepointSites,
+  listSharepointFiles,
+  searchSharepoint,
+  listSharepointLists,
+  createSharepointList,
+  listSharepointListItems,
+  getSharepointListItem,
+  createSharepointListItem,
+  updateSharepointListItem,
+  deleteSharepointListItem,
+} from "./tools/sharepoint.js";
 import { listOneDriveFiles, searchOneDrive, getOneDriveFileInfo } from "./tools/onedrive.js";
 
 function createMcpServer(): Server {
@@ -250,6 +261,111 @@ function createMcpServer(): Server {
           required: ["query"],
         },
       },
+      {
+        name: "list_sharepoint_lists",
+        description: "Listet alle Listen einer SharePoint-Site auf",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            top: { type: "number", description: "Anzahl der Ergebnisse (Standard: 20)" },
+          },
+          required: ["siteId"],
+        },
+      },
+      {
+        name: "create_sharepoint_list",
+        description: "Erstellt eine neue SharePoint-Liste mit benutzerdefinierten Spalten",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            displayName: { type: "string", description: "Name der Liste" },
+            description: { type: "string", description: "Beschreibung der Liste" },
+            columns: {
+              type: "array",
+              description: "Spaltendefinitionen",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  type: { type: "string", enum: ["text", "number", "boolean", "dateTime", "choice"] },
+                  choices: { type: "array", items: { type: "string" }, description: "Nur bei Typ 'choice'" },
+                },
+                required: ["name", "type"],
+              },
+            },
+          },
+          required: ["siteId", "displayName", "columns"],
+        },
+      },
+      {
+        name: "list_sharepoint_list_items",
+        description: "Listet Einträge einer SharePoint-Liste auf",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            listId: { type: "string", description: "ID oder Name der Liste" },
+            top: { type: "number", description: "Anzahl der Ergebnisse (Standard: 20)" },
+            filter: { type: "string", description: "OData-Filter" },
+          },
+          required: ["siteId", "listId"],
+        },
+      },
+      {
+        name: "get_sharepoint_list_item",
+        description: "Liest einen einzelnen Eintrag einer SharePoint-Liste",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string" },
+            listId: { type: "string" },
+            itemId: { type: "string" },
+          },
+          required: ["siteId", "listId", "itemId"],
+        },
+      },
+      {
+        name: "create_sharepoint_list_item",
+        description: "Erstellt einen neuen Eintrag in einer SharePoint-Liste",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string" },
+            listId: { type: "string" },
+            fields: { type: "object", description: "Feldinhalte als Key-Value Objekt" },
+          },
+          required: ["siteId", "listId", "fields"],
+        },
+      },
+      {
+        name: "update_sharepoint_list_item",
+        description: "Aktualisiert einen Eintrag in einer SharePoint-Liste",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string" },
+            listId: { type: "string" },
+            itemId: { type: "string" },
+            fields: { type: "object", description: "Zu aktualisierende Felder als Key-Value Objekt" },
+          },
+          required: ["siteId", "listId", "itemId", "fields"],
+        },
+      },
+      {
+        name: "delete_sharepoint_list_item",
+        description: "Löscht einen Eintrag aus einer SharePoint-Liste",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string" },
+            listId: { type: "string" },
+            itemId: { type: "string" },
+          },
+          required: ["siteId", "listId", "itemId"],
+        },
+      },
       // ── OneDrive ─────────────────────────────────────────────────────
       {
         name: "list_onedrive_files",
@@ -313,7 +429,14 @@ function createMcpServer(): Server {
         // SharePoint
         case "list_sharepoint_sites": result = await listSharepointSites(args as any); break;
         case "list_sharepoint_files": result = await listSharepointFiles(args as any); break;
-        case "search_sharepoint":     result = await searchSharepoint(args as any); break;
+        case "search_sharepoint":              result = await searchSharepoint(args as any); break;
+        case "list_sharepoint_lists":          result = await listSharepointLists(args as any); break;
+        case "create_sharepoint_list":         result = await createSharepointList(args as any); break;
+        case "list_sharepoint_list_items":     result = await listSharepointListItems(args as any); break;
+        case "get_sharepoint_list_item":       result = await getSharepointListItem(args as any); break;
+        case "create_sharepoint_list_item":    result = await createSharepointListItem(args as any); break;
+        case "update_sharepoint_list_item":    result = await updateSharepointListItem(args as any); break;
+        case "delete_sharepoint_list_item":    result = await deleteSharepointListItem(args as any); break;
         // OneDrive
         case "list_onedrive_files":   result = await listOneDriveFiles(args as any); break;
         case "search_onedrive":       result = await searchOneDrive(args as any); break;
