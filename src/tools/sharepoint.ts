@@ -19,6 +19,22 @@ export async function listSharepointSites(params: { search?: string; top?: numbe
   }));
 }
 
+export async function getSharepointSite(params: { siteId: string }) {
+  const { siteId } = params;
+  const client = getGraphClient();
+
+  const s = await client.api(`/sites/${siteId}`).get();
+  return {
+    id: s.id,
+    name: s.name,
+    displayName: s.displayName,
+    webUrl: s.webUrl,
+    description: s.description ?? null,
+    createdDateTime: s.createdDateTime,
+    lastModifiedDateTime: s.lastModifiedDateTime,
+  };
+}
+
 export async function listSharepointFiles(params: {
   siteId: string;
   driveId?: string;
@@ -62,6 +78,48 @@ export async function listSharepointLists(params: { siteId: string; top?: number
     listType: l.list?.template ?? null,
     createdDateTime: l.createdDateTime,
   }));
+}
+
+export async function getSharepointList(params: { siteId: string; listId: string }) {
+  const { siteId, listId } = params;
+  const client = getGraphClient();
+
+  const l = await client.api(`/sites/${siteId}/lists/${listId}`).get();
+  return {
+    id: l.id,
+    name: l.name,
+    displayName: l.displayName,
+    webUrl: l.webUrl,
+    listType: l.list?.template ?? null,
+    createdDateTime: l.createdDateTime,
+    lastModifiedDateTime: l.lastModifiedDateTime,
+    description: l.description ?? null,
+  };
+}
+
+export async function updateSharepointList(params: {
+  siteId: string;
+  listId: string;
+  displayName?: string;
+  description?: string;
+}) {
+  const { siteId, listId, displayName, description } = params;
+  const client = getGraphClient();
+
+  const body: Record<string, unknown> = {};
+  if (displayName) body.displayName = displayName;
+  if (description !== undefined) body.description = description;
+
+  await client.api(`/sites/${siteId}/lists/${listId}`).patch(body);
+  return { success: true, message: "Liste aktualisiert." };
+}
+
+export async function deleteSharepointList(params: { siteId: string; listId: string }) {
+  const { siteId, listId } = params;
+  const client = getGraphClient();
+
+  await client.api(`/sites/${siteId}/lists/${listId}`).delete();
+  return { success: true, message: "Liste gelöscht." };
 }
 
 export async function createSharepointList(params: {
@@ -211,4 +269,117 @@ export async function searchSharepoint(params: { query: string; top?: number }) 
     lastModifiedDateTime: h.resource?.lastModifiedDateTime,
     summary: h.summary ?? null,
   }));
+}
+
+export async function createSharepointFolder(params: {
+  siteId: string;
+  driveId?: string;
+  parentId?: string;
+  folderName: string;
+}) {
+  const { siteId, driveId, parentId, folderName } = params;
+  const client = getGraphClient();
+
+  let path: string;
+  if (driveId && parentId) {
+    path = `/sites/${siteId}/drives/${driveId}/items/${parentId}/children`;
+  } else if (driveId) {
+    path = `/sites/${siteId}/drives/${driveId}/root/children`;
+  } else if (parentId) {
+    path = `/sites/${siteId}/drive/items/${parentId}/children`;
+  } else {
+    path = `/sites/${siteId}/drive/root/children`;
+  }
+
+  const result = await client.api(path).post({
+    name: folderName,
+    folder: {},
+    "@microsoft.graph.conflictBehavior": "rename",
+  });
+
+  return {
+    id: result.id,
+    name: result.name,
+    webUrl: result.webUrl,
+    createdDateTime: result.createdDateTime,
+  };
+}
+
+export async function uploadSharepointFile(params: {
+  siteId: string;
+  driveId?: string;
+  parentId?: string;
+  fileName: string;
+  content: string;
+  mimeType?: string;
+}) {
+  const { siteId, driveId, parentId, fileName, content, mimeType = "text/plain" } = params;
+  const client = getGraphClient();
+
+  let path: string;
+  const encodedName = encodeURIComponent(fileName);
+  if (driveId && parentId) {
+    path = `/sites/${siteId}/drives/${driveId}/items/${parentId}:/${encodedName}:/content`;
+  } else if (driveId) {
+    path = `/sites/${siteId}/drives/${driveId}/root:/${encodedName}:/content`;
+  } else if (parentId) {
+    path = `/sites/${siteId}/drive/items/${parentId}:/${encodedName}:/content`;
+  } else {
+    path = `/sites/${siteId}/drive/root:/${encodedName}:/content`;
+  }
+
+  const buffer = Buffer.from(content, "utf-8");
+  const result = await client.api(path).header("Content-Type", mimeType).put(buffer);
+
+  return {
+    id: result.id,
+    name: result.name,
+    size: result.size,
+    webUrl: result.webUrl,
+    createdDateTime: result.createdDateTime,
+  };
+}
+
+export async function deleteSharepointFile(params: {
+  siteId: string;
+  driveId?: string;
+  itemId: string;
+}) {
+  const { siteId, driveId, itemId } = params;
+  const client = getGraphClient();
+
+  const path = driveId
+    ? `/sites/${siteId}/drives/${driveId}/items/${itemId}`
+    : `/sites/${siteId}/drive/items/${itemId}`;
+
+  await client.api(path).delete();
+  return { success: true, message: "Datei/Ordner gelöscht." };
+}
+
+export async function moveSharepointFile(params: {
+  siteId: string;
+  driveId?: string;
+  itemId: string;
+  destinationParentId: string;
+  newName?: string;
+}) {
+  const { siteId, driveId, itemId, destinationParentId, newName } = params;
+  const client = getGraphClient();
+
+  const path = driveId
+    ? `/sites/${siteId}/drives/${driveId}/items/${itemId}`
+    : `/sites/${siteId}/drive/items/${itemId}`;
+
+  const body: Record<string, unknown> = {
+    parentReference: { id: destinationParentId },
+  };
+  if (newName) body.name = newName;
+
+  const result = await client.api(path).patch(body);
+  return {
+    id: result.id,
+    name: result.name,
+    webUrl: result.webUrl,
+    parentPath: result.parentReference?.path ?? null,
+  };
 }

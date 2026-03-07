@@ -20,12 +20,18 @@ import {
 } from "./tools/calendar.js";
 import { listTodoLists, listTasks, createTask, updateTask, deleteTask } from "./tools/todo.js";
 import {
-  listSharepointSites, listSharepointFiles, searchSharepoint,
-  listSharepointLists, createSharepointList,
+  listSharepointSites, getSharepointSite,
+  listSharepointFiles, searchSharepoint,
+  listSharepointLists, getSharepointList, createSharepointList, updateSharepointList, deleteSharepointList,
   listSharepointListItems, getSharepointListItem,
   createSharepointListItem, updateSharepointListItem, deleteSharepointListItem,
+  createSharepointFolder, uploadSharepointFile, deleteSharepointFile, moveSharepointFile,
 } from "./tools/sharepoint.js";
-import { listOneDriveFiles, searchOneDrive, getOneDriveFileInfo } from "./tools/onedrive.js";
+import {
+  listOneDriveFiles, searchOneDrive, getOneDriveFileInfo,
+  createOneDriveFolder, uploadOneDriveFile, deleteOneDriveItem,
+  moveOneDriveItem, renameOneDriveItem, copyOneDriveItem,
+} from "./tools/onedrive.js";
 import { listContacts, getContact, createContact, updateContact, deleteContact } from "./tools/contacts.js";
 import { listTeams, listChannels, listChannelMessages, sendChannelMessage, listChats, listChatMessages, sendChatMessage } from "./tools/teams.js";
 import { listNotebooks, listSections, listPages, getPage, createPage } from "./tools/onenote.js";
@@ -369,6 +375,113 @@ function createMcpServer(): Server {
           required: ["siteId", "listId", "itemId"],
         },
       },
+      {
+        name: "get_sharepoint_site",
+        description: "Ruft Details einer SharePoint-Site ab",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+          },
+          required: ["siteId"],
+        },
+      },
+      {
+        name: "get_sharepoint_list",
+        description: "Ruft Details einer SharePoint-Liste ab",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            listId: { type: "string", description: "ID der Liste" },
+          },
+          required: ["siteId", "listId"],
+        },
+      },
+      {
+        name: "update_sharepoint_list",
+        description: "Aktualisiert eine SharePoint-Liste (Name, Beschreibung)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            listId: { type: "string", description: "ID der Liste" },
+            displayName: { type: "string", description: "Neuer Anzeigename" },
+            description: { type: "string", description: "Neue Beschreibung" },
+          },
+          required: ["siteId", "listId"],
+        },
+      },
+      {
+        name: "delete_sharepoint_list",
+        description: "Löscht eine SharePoint-Liste",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            listId: { type: "string", description: "ID der Liste" },
+          },
+          required: ["siteId", "listId"],
+        },
+      },
+      {
+        name: "create_sharepoint_folder",
+        description: "Erstellt einen Ordner in einer SharePoint-Dokumentbibliothek",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            driveId: { type: "string", description: "ID der Drive (optional)" },
+            parentId: { type: "string", description: "ID des übergeordneten Ordners (leer = Root)" },
+            folderName: { type: "string", description: "Name des neuen Ordners" },
+          },
+          required: ["siteId", "folderName"],
+        },
+      },
+      {
+        name: "upload_sharepoint_file",
+        description: "Lädt eine Datei in eine SharePoint-Dokumentbibliothek hoch",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            driveId: { type: "string", description: "ID der Drive (optional)" },
+            parentId: { type: "string", description: "ID des Zielordners (leer = Root)" },
+            fileName: { type: "string", description: "Dateiname inkl. Endung" },
+            content: { type: "string", description: "Dateiinhalt als Text" },
+            mimeType: { type: "string", description: "MIME-Type (Standard: text/plain)" },
+          },
+          required: ["siteId", "fileName", "content"],
+        },
+      },
+      {
+        name: "delete_sharepoint_file",
+        description: "Löscht eine Datei oder einen Ordner in SharePoint",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            driveId: { type: "string", description: "ID der Drive (optional)" },
+            itemId: { type: "string", description: "ID der Datei oder des Ordners" },
+          },
+          required: ["siteId", "itemId"],
+        },
+      },
+      {
+        name: "move_sharepoint_file",
+        description: "Verschiebt eine Datei oder einen Ordner in SharePoint (optional umbenennen)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            siteId: { type: "string", description: "ID der SharePoint-Site" },
+            driveId: { type: "string", description: "ID der Drive (optional)" },
+            itemId: { type: "string", description: "ID der Datei oder des Ordners" },
+            destinationParentId: { type: "string", description: "ID des Zielordners" },
+            newName: { type: "string", description: "Neuer Name (optional)" },
+          },
+          required: ["siteId", "itemId", "destinationParentId"],
+        },
+      },
       // ── OneDrive ─────────────────────────────────────────────────────
       {
         name: "list_onedrive_files",
@@ -402,6 +515,81 @@ function createMcpServer(): Server {
             fileId: { type: "string", description: "ID der Datei" },
           },
           required: ["fileId"],
+        },
+      },
+      {
+        name: "create_onedrive_folder",
+        description: "Erstellt einen neuen Ordner in OneDrive",
+        inputSchema: {
+          type: "object",
+          properties: {
+            parentId: { type: "string", description: "ID des übergeordneten Ordners (leer = Root)" },
+            folderName: { type: "string", description: "Name des neuen Ordners" },
+          },
+          required: ["folderName"],
+        },
+      },
+      {
+        name: "upload_onedrive_file",
+        description: "Lädt eine Datei in OneDrive hoch (erstellt oder überschreibt)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            parentId: { type: "string", description: "ID des Zielordners (leer = Root)" },
+            fileName: { type: "string", description: "Dateiname inkl. Endung" },
+            content: { type: "string", description: "Dateiinhalt als Text" },
+            mimeType: { type: "string", description: "MIME-Type (Standard: text/plain)" },
+          },
+          required: ["fileName", "content"],
+        },
+      },
+      {
+        name: "delete_onedrive_item",
+        description: "Löscht eine Datei oder einen Ordner in OneDrive",
+        inputSchema: {
+          type: "object",
+          properties: {
+            itemId: { type: "string", description: "ID der Datei oder des Ordners" },
+          },
+          required: ["itemId"],
+        },
+      },
+      {
+        name: "move_onedrive_item",
+        description: "Verschiebt eine Datei oder einen Ordner in OneDrive (optional umbenennen)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            itemId: { type: "string", description: "ID der Datei oder des Ordners" },
+            destinationParentId: { type: "string", description: "ID des Zielordners" },
+            newName: { type: "string", description: "Neuer Name (optional)" },
+          },
+          required: ["itemId", "destinationParentId"],
+        },
+      },
+      {
+        name: "rename_onedrive_item",
+        description: "Benennt eine Datei oder einen Ordner in OneDrive um",
+        inputSchema: {
+          type: "object",
+          properties: {
+            itemId: { type: "string", description: "ID der Datei oder des Ordners" },
+            newName: { type: "string", description: "Neuer Name" },
+          },
+          required: ["itemId", "newName"],
+        },
+      },
+      {
+        name: "copy_onedrive_item",
+        description: "Kopiert eine Datei oder einen Ordner in OneDrive",
+        inputSchema: {
+          type: "object",
+          properties: {
+            itemId: { type: "string", description: "ID der Datei oder des Ordners" },
+            destinationParentId: { type: "string", description: "ID des Zielordners" },
+            newName: { type: "string", description: "Name der Kopie (optional)" },
+          },
+          required: ["itemId", "destinationParentId"],
         },
       },
       // ── Contacts ─────────────────────────────────────────────────────
@@ -841,20 +1029,34 @@ function createMcpServer(): Server {
         case "update_task":           result = await updateTask(args as any); break;
         case "delete_task":           result = await deleteTask(args as any); break;
         // SharePoint
-        case "list_sharepoint_sites": result = await listSharepointSites(args as any); break;
-        case "list_sharepoint_files": result = await listSharepointFiles(args as any); break;
+        case "list_sharepoint_sites":          result = await listSharepointSites(args as any); break;
+        case "get_sharepoint_site":            result = await getSharepointSite(args as any); break;
+        case "list_sharepoint_files":          result = await listSharepointFiles(args as any); break;
         case "search_sharepoint":              result = await searchSharepoint(args as any); break;
         case "list_sharepoint_lists":          result = await listSharepointLists(args as any); break;
+        case "get_sharepoint_list":            result = await getSharepointList(args as any); break;
         case "create_sharepoint_list":         result = await createSharepointList(args as any); break;
+        case "update_sharepoint_list":         result = await updateSharepointList(args as any); break;
+        case "delete_sharepoint_list":         result = await deleteSharepointList(args as any); break;
         case "list_sharepoint_list_items":     result = await listSharepointListItems(args as any); break;
         case "get_sharepoint_list_item":       result = await getSharepointListItem(args as any); break;
         case "create_sharepoint_list_item":    result = await createSharepointListItem(args as any); break;
         case "update_sharepoint_list_item":    result = await updateSharepointListItem(args as any); break;
         case "delete_sharepoint_list_item":    result = await deleteSharepointListItem(args as any); break;
+        case "create_sharepoint_folder":       result = await createSharepointFolder(args as any); break;
+        case "upload_sharepoint_file":         result = await uploadSharepointFile(args as any); break;
+        case "delete_sharepoint_file":         result = await deleteSharepointFile(args as any); break;
+        case "move_sharepoint_file":           result = await moveSharepointFile(args as any); break;
         // OneDrive
-        case "list_onedrive_files":   result = await listOneDriveFiles(args as any); break;
-        case "search_onedrive":       result = await searchOneDrive(args as any); break;
+        case "list_onedrive_files":            result = await listOneDriveFiles(args as any); break;
+        case "search_onedrive":                result = await searchOneDrive(args as any); break;
         case "get_onedrive_file_info":         result = await getOneDriveFileInfo(args as any); break;
+        case "create_onedrive_folder":         result = await createOneDriveFolder(args as any); break;
+        case "upload_onedrive_file":           result = await uploadOneDriveFile(args as any); break;
+        case "delete_onedrive_item":           result = await deleteOneDriveItem(args as any); break;
+        case "move_onedrive_item":             result = await moveOneDriveItem(args as any); break;
+        case "rename_onedrive_item":           result = await renameOneDriveItem(args as any); break;
+        case "copy_onedrive_item":             result = await copyOneDriveItem(args as any); break;
         // Contacts
         case "list_contacts":                  result = await listContacts(args as any); break;
         case "get_contact":                    result = await getContact((args as any).id); break;
