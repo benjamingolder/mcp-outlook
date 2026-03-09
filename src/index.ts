@@ -1,6 +1,11 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
@@ -1226,6 +1231,12 @@ app.post("/messages", async (req, res) => {
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "mcp-outlook" });
+});
+
+app.get("/icon.svg", (_req, res) => {
+  const icon = readFileSync(join(__dirname, "icon.svg"));
+  res.setHeader("Content-Type", "image/svg+xml");
+  res.send(icon);
 });
 
 const PORT = parseInt(process.env.PORT ?? "3000");

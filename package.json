@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/icon.svg dist/icon.svg",
     "start": "node dist/index.js",
     "auth": "node dist/auth-setup.js"
   },
