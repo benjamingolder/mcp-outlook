@@ -28,6 +28,7 @@ export async function listEvents(params: {
     organizer: e.organizer?.emailAddress,
     isAllDay: e.isAllDay,
     bodyPreview: e.bodyPreview,
+    categories: e.categories ?? [],
     attendees: e.attendees?.map((a: any) => ({
       email: a.emailAddress,
       status: a.status?.response,
@@ -52,6 +53,7 @@ export async function getEvent(id: string) {
       status: a.status?.response,
     })),
     isAllDay: e.isAllDay,
+    categories: e.categories ?? [],
   };
 }
 
@@ -64,6 +66,7 @@ export async function createEvent(params: {
   attendees?: string[];
   isAllDay?: boolean;
   bodyType?: "html" | "text";
+  categories?: string[];
 }) {
   const {
     subject,
@@ -74,6 +77,7 @@ export async function createEvent(params: {
     attendees = [],
     isAllDay = false,
     bodyType = "text",
+    categories,
   } = params;
 
   const client = getGraphClient();
@@ -87,6 +91,7 @@ export async function createEvent(params: {
       content: body,
     },
     ...(location && { location: { displayName: location } }),
+    ...(categories && categories.length > 0 && { categories }),
     attendees: attendees.map((addr) => ({
       emailAddress: { address: addr },
       type: "required",
@@ -109,8 +114,9 @@ export async function updateEvent(params: {
   end?: string;
   body?: string;
   location?: string;
+  categories?: string[];
 }) {
-  const { id, subject, start, end, body, location } = params;
+  const { id, subject, start, end, body, location, categories } = params;
   const client = getGraphClient();
 
   const patch: Record<string, unknown> = {};
@@ -119,6 +125,7 @@ export async function updateEvent(params: {
   if (end) patch.end = { dateTime: end, timeZone: "UTC" };
   if (body) patch.body = { contentType: "Text", content: body };
   if (location) patch.location = { displayName: location };
+  if (categories !== undefined) patch.categories = categories;
 
   await client.api(`/me/events/${id}`).patch(patch);
   return { success: true, message: "Termin aktualisiert." };
