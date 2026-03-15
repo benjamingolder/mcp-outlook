@@ -7,37 +7,46 @@ import * as path from "path";
 
 const CACHE_PATH = process.env.TOKEN_CACHE_PATH ?? "/data/token-cache.json";
 
-export const SCOPES = [
-  // Mail & Kalender
+// Volle Scopes (eigener Tenant, Admin-Consent vorhanden)
+const SCOPES_FULL = [
   "https://graph.microsoft.com/Mail.Read",
   "https://graph.microsoft.com/Mail.Send",
   "https://graph.microsoft.com/Calendars.ReadWrite",
-  // To Do & Planner
   "https://graph.microsoft.com/Tasks.ReadWrite",
-  // Kontakte
   "https://graph.microsoft.com/Contacts.ReadWrite",
-  // SharePoint & Dateien
   "https://graph.microsoft.com/Sites.ReadWrite.All",
   "https://graph.microsoft.com/Files.ReadWrite.All",
-  // Teams
   "https://graph.microsoft.com/Team.ReadBasic.All",
   "https://graph.microsoft.com/Channel.ReadBasic.All",
   "https://graph.microsoft.com/ChannelMessage.Read.All",
   "https://graph.microsoft.com/ChannelMessage.Send",
   "https://graph.microsoft.com/Chat.ReadWrite",
-  // OneNote
   "https://graph.microsoft.com/Notes.ReadWrite",
-  // Verzeichnis
   "https://graph.microsoft.com/User.Read.All",
   "https://graph.microsoft.com/Group.ReadWrite.All",
-  // Präsenz
   "https://graph.microsoft.com/Presence.ReadWrite",
-  // People & Insights
   "https://graph.microsoft.com/People.Read",
-  // Bookings
   "https://graph.microsoft.com/Bookings.ReadWrite.All",
   "offline_access",
 ];
+
+// Minimale Scopes (fremder Tenant, nur User-Consent – kein Admin-Consent nötig)
+const SCOPES_MINIMAL = [
+  "https://graph.microsoft.com/Mail.Read",
+  "https://graph.microsoft.com/Mail.Send",
+  "https://graph.microsoft.com/Calendars.ReadWrite",
+  "https://graph.microsoft.com/Tasks.ReadWrite",
+  "https://graph.microsoft.com/Contacts.ReadWrite",
+  "https://graph.microsoft.com/Files.ReadWrite",
+  "https://graph.microsoft.com/Chat.ReadWrite",
+  "https://graph.microsoft.com/Notes.ReadWrite",
+  "https://graph.microsoft.com/User.Read",
+  "https://graph.microsoft.com/People.Read",
+  "offline_access",
+];
+
+export const SCOPES =
+  process.env.SCOPES_PRESET === "minimal" ? SCOPES_MINIMAL : SCOPES_FULL;
 
 const cachePlugin = {
   beforeCacheAccess: async (ctx: TokenCacheContext) => {
