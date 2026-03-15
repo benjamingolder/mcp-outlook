@@ -57,10 +57,13 @@ let pca: PublicClientApplication | null = null;
 
 function getApp(): PublicClientApplication {
   if (!pca) {
+    // "common" oder "organizations" als TENANT_ID erlaubt Multi-Tenant-Login
+    // (z.B. für Schulkonten in einem fremden Tenant)
+    const tenantId = process.env.TENANT_ID ?? "common";
     pca = new PublicClientApplication({
       auth: {
         clientId: process.env.CLIENT_ID!,
-        authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`,
+        authority: `https://login.microsoftonline.com/${tenantId}`,
       },
       cache: { cachePlugin },
     });

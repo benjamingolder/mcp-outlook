@@ -15,5 +15,23 @@ services:
       - mcp-data:/data
     restart: unless-stopped
 
+  mcp-outlook-schule:
+    image: ghcr.io/benjamingolder/mcp-outlook:latest
+    pull_policy: always
+    container_name: mcp-outlook-schule
+    environment:
+      CLIENT_ID: 5cc1a755-7f1d-4759-9365-20930f6ad850
+      # "common" = akzeptiert jeden Microsoft-Tenant (kein eigener Tenant nötig)
+      TENANT_ID: common
+      TOKEN_CACHE_PATH: /data/token-cache.json
+      API_KEY: ${API_KEY_SCHULE}
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - mcp-data-schule:/data
+    restart: unless-stopped
+
 volumes:
   mcp-data:
+  mcp-data-schule:
