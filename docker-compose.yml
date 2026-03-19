@@ -15,5 +15,23 @@ services:
       - mcp-data:/data
     restart: unless-stopped
 
+  mcp-outlook-work:
+    build: .
+    container_name: mcp-outlook-work
+    environment:
+      # Microsoft Graph Explorer App (keine eigene App Registration nötig)
+      CLIENT_ID: de8bc8b5-d9f9-48b1-a8ad-b748da725064
+      TENANT_ID: organizations
+      SCOPE_PRESET: work
+      TOKEN_CACHE_PATH: /data/token-cache.json
+      API_KEY: ${WORK_API_KEY}
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    volumes:
+      - mcp-work-data:/data
+    restart: unless-stopped
+
 volumes:
   mcp-data:
+  mcp-work-data:
