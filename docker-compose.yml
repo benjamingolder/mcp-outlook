@@ -16,7 +16,8 @@ services:
     restart: unless-stopped
 
   mcp-outlook-work:
-    build: .
+    image: ghcr.io/benjamingolder/mcp-outlook:latest
+    pull_policy: always
     container_name: mcp-outlook-work
     environment:
       # Microsoft Graph Explorer App (keine eigene App Registration nötig)
