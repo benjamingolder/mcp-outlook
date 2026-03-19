@@ -93,7 +93,8 @@ export async function doDeviceCodeFlow(): Promise<void> {
   const app = getApp();
   await app.acquireTokenByDeviceCode({
     deviceCodeCallback: (response) => {
-      console.log("\n" + response.message + "\n");
+      console.log(`\nBitte besuche: ${response.verificationUri}`);
+      console.log(`Und gib diesen Code ein: ${response.userCode}\n`);
     },
     scopes: SCOPES,
   });
