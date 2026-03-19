@@ -20,8 +20,8 @@ services:
     pull_policy: always
     container_name: mcp-outlook-work
     environment:
-      # Azure CLI App – unterstützt Device Code Flow für beliebige Org-Accounts
-      CLIENT_ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46
+      # Private App Registration als Multi-Tenant → Zugriff auf Geschäfts-Tenant
+      CLIENT_ID: 5cc1a755-7f1d-4759-9365-20930f6ad850
       TENANT_ID: organizations
       SCOPE_PRESET: work
       TOKEN_CACHE_PATH: /data/token-cache.json
