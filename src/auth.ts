@@ -1,5 +1,6 @@
 import {
   PublicClientApplication,
+  LogLevel,
   type TokenCacheContext,
 } from "@azure/msal-node";
 import * as fs from "fs";
@@ -65,6 +66,12 @@ function getApp(): PublicClientApplication {
         authority: `https://login.microsoftonline.com/${tenantId}`,
       },
       cache: { cachePlugin },
+      system: {
+        loggerOptions: {
+          loggerCallback: (level, message) => console.log(`[MSAL] ${message}`),
+          logLevel: LogLevel.Verbose,
+        },
+      },
     });
   }
   return pca;
