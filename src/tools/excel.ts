@@ -1,8 +1,7 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listWorksheets(params: { fileId: string; driveId?: string }) {
+export async function listWorksheets(client: Client, params: { fileId: string; driveId?: string }) {
   const { fileId, driveId } = params;
-  const client = getGraphClient();
   const base = driveId
     ? `/drives/${driveId}/items/${fileId}`
     : `/me/drive/items/${fileId}`;
@@ -15,14 +14,13 @@ export async function listWorksheets(params: { fileId: string; driveId?: string 
   }));
 }
 
-export async function getRange(params: {
+export async function getRange(client: Client, params: {
   fileId: string;
   worksheetId: string;
   address: string;
   driveId?: string;
 }) {
   const { fileId, worksheetId, address, driveId } = params;
-  const client = getGraphClient();
   const base = driveId
     ? `/drives/${driveId}/items/${fileId}`
     : `/me/drive/items/${fileId}`;
@@ -39,7 +37,7 @@ export async function getRange(params: {
   };
 }
 
-export async function updateRange(params: {
+export async function updateRange(client: Client, params: {
   fileId: string;
   worksheetId: string;
   address: string;
@@ -47,7 +45,6 @@ export async function updateRange(params: {
   driveId?: string;
 }) {
   const { fileId, worksheetId, address, values, driveId } = params;
-  const client = getGraphClient();
   const base = driveId
     ? `/drives/${driveId}/items/${fileId}`
     : `/me/drive/items/${fileId}`;
@@ -57,13 +54,12 @@ export async function updateRange(params: {
   return { success: true, message: "Bereich aktualisiert." };
 }
 
-export async function getUsedRange(params: {
+export async function getUsedRange(client: Client, params: {
   fileId: string;
   worksheetId: string;
   driveId?: string;
 }) {
   const { fileId, worksheetId, driveId } = params;
-  const client = getGraphClient();
   const base = driveId
     ? `/drives/${driveId}/items/${fileId}`
     : `/me/drive/items/${fileId}`;

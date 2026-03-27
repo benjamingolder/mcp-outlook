@@ -1,6 +1,6 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listEvents(params: {
+export async function listEvents(client: Client, params: {
   startDateTime?: string;
   endDateTime?: string;
   top?: number;
@@ -11,7 +11,6 @@ export async function listEvents(params: {
     top = 20,
   } = params;
 
-  const client = getGraphClient();
   const result = await client
     .api("/me/calendarView")
     .query({ startDateTime, endDateTime })
@@ -36,8 +35,7 @@ export async function listEvents(params: {
   }));
 }
 
-export async function getEvent(id: string) {
-  const client = getGraphClient();
+export async function getEvent(client: Client, id: string) {
   const e = await client.api(`/me/events/${id}`).get();
   return {
     id: e.id,
@@ -57,7 +55,7 @@ export async function getEvent(id: string) {
   };
 }
 
-export async function createEvent(params: {
+export async function createEvent(client: Client, params: {
   subject: string;
   start: string;
   end: string;
@@ -80,7 +78,6 @@ export async function createEvent(params: {
     categories,
   } = params;
 
-  const client = getGraphClient();
   const event = await client.api("/me/events").post({
     subject,
     isAllDay,
@@ -107,7 +104,7 @@ export async function createEvent(params: {
   };
 }
 
-export async function updateEvent(params: {
+export async function updateEvent(client: Client, params: {
   id: string;
   subject?: string;
   start?: string;
@@ -117,7 +114,6 @@ export async function updateEvent(params: {
   categories?: string[];
 }) {
   const { id, subject, start, end, body, location, categories } = params;
-  const client = getGraphClient();
 
   const patch: Record<string, unknown> = {};
   if (subject) patch.subject = subject;
@@ -131,8 +127,7 @@ export async function updateEvent(params: {
   return { success: true, message: "Termin aktualisiert." };
 }
 
-export async function deleteEvent(id: string) {
-  const client = getGraphClient();
+export async function deleteEvent(client: Client, id: string) {
   await client.api(`/me/events/${id}`).delete();
   return { success: true, message: "Termin gelöscht." };
 }

@@ -1,8 +1,7 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listOneDriveFiles(params: { folderId?: string; top?: number }) {
+export async function listOneDriveFiles(client: Client, params: { folderId?: string; top?: number }) {
   const { folderId, top = 20 } = params;
-  const client = getGraphClient();
 
   const path = folderId
     ? `/me/drive/items/${folderId}/children`
@@ -21,9 +20,8 @@ export async function listOneDriveFiles(params: { folderId?: string; top?: numbe
   }));
 }
 
-export async function searchOneDrive(params: { query: string; top?: number }) {
+export async function searchOneDrive(client: Client, params: { query: string; top?: number }) {
   const { query, top = 20 } = params;
-  const client = getGraphClient();
 
   const result = await client
     .api(`/me/drive/root/search(q='${encodeURIComponent(query)}')`)
@@ -42,9 +40,8 @@ export async function searchOneDrive(params: { query: string; top?: number }) {
   }));
 }
 
-export async function getOneDriveFileInfo(params: { fileId: string }) {
+export async function getOneDriveFileInfo(client: Client, params: { fileId: string }) {
   const { fileId } = params;
-  const client = getGraphClient();
 
   const item = await client.api(`/me/drive/items/${fileId}`).get();
   return {
@@ -61,9 +58,8 @@ export async function getOneDriveFileInfo(params: { fileId: string }) {
   };
 }
 
-export async function createOneDriveFolder(params: { parentId?: string; folderName: string }) {
+export async function createOneDriveFolder(client: Client, params: { parentId?: string; folderName: string }) {
   const { parentId, folderName } = params;
-  const client = getGraphClient();
 
   const path = parentId
     ? `/me/drive/items/${parentId}/children`
@@ -83,14 +79,13 @@ export async function createOneDriveFolder(params: { parentId?: string; folderNa
   };
 }
 
-export async function uploadOneDriveFile(params: {
+export async function uploadOneDriveFile(client: Client, params: {
   parentId?: string;
   fileName: string;
   content: string;
   mimeType?: string;
 }) {
   const { parentId, fileName, content, mimeType = "text/plain" } = params;
-  const client = getGraphClient();
 
   const path = parentId
     ? `/me/drive/items/${parentId}:/${encodeURIComponent(fileName)}:/content`
@@ -112,21 +107,18 @@ export async function uploadOneDriveFile(params: {
   };
 }
 
-export async function deleteOneDriveItem(params: { itemId: string }) {
+export async function deleteOneDriveItem(client: Client, params: { itemId: string }) {
   const { itemId } = params;
-  const client = getGraphClient();
-
   await client.api(`/me/drive/items/${itemId}`).delete();
   return { success: true, message: "Element gelöscht." };
 }
 
-export async function moveOneDriveItem(params: {
+export async function moveOneDriveItem(client: Client, params: {
   itemId: string;
   destinationParentId: string;
   newName?: string;
 }) {
   const { itemId, destinationParentId, newName } = params;
-  const client = getGraphClient();
 
   const body: Record<string, unknown> = {
     parentReference: { id: destinationParentId },
@@ -142,9 +134,8 @@ export async function moveOneDriveItem(params: {
   };
 }
 
-export async function renameOneDriveItem(params: { itemId: string; newName: string }) {
+export async function renameOneDriveItem(client: Client, params: { itemId: string; newName: string }) {
   const { itemId, newName } = params;
-  const client = getGraphClient();
 
   const result = await client.api(`/me/drive/items/${itemId}`).patch({ name: newName });
   return {
@@ -154,13 +145,12 @@ export async function renameOneDriveItem(params: { itemId: string; newName: stri
   };
 }
 
-export async function copyOneDriveItem(params: {
+export async function copyOneDriveItem(client: Client, params: {
   itemId: string;
   destinationParentId: string;
   newName?: string;
 }) {
   const { itemId, destinationParentId, newName } = params;
-  const client = getGraphClient();
 
   const body: Record<string, unknown> = {
     parentReference: { id: destinationParentId },

@@ -1,8 +1,7 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listUsers(params: { top?: number; filter?: string; search?: string }) {
+export async function listUsers(client: Client, params: { top?: number; filter?: string; search?: string }) {
   const { top = 20, filter, search } = params;
-  const client = getGraphClient();
 
   let req = client
     .api("/users")
@@ -26,9 +25,8 @@ export async function listUsers(params: { top?: number; filter?: string; search?
   }));
 }
 
-export async function getUser(params: { userId: string }) {
+export async function getUser(client: Client, params: { userId: string }) {
   const { userId } = params;
-  const client = getGraphClient();
   const u = await client.api(`/users/${userId}`).get();
   return {
     id: u.id,
@@ -45,9 +43,8 @@ export async function getUser(params: { userId: string }) {
   };
 }
 
-export async function listGroups(params: { top?: number; filter?: string; search?: string }) {
+export async function listGroups(client: Client, params: { top?: number; filter?: string; search?: string }) {
   const { top = 20, filter, search } = params;
-  const client = getGraphClient();
 
   let req = client
     .api("/groups")
@@ -68,9 +65,8 @@ export async function listGroups(params: { top?: number; filter?: string; search
   }));
 }
 
-export async function listGroupMembers(params: { groupId: string; top?: number }) {
+export async function listGroupMembers(client: Client, params: { groupId: string; top?: number }) {
   const { groupId, top = 50 } = params;
-  const client = getGraphClient();
   const result = await client.api(`/groups/${groupId}/members`).top(top).get();
   return result.value.map((m: any) => ({
     id: m.id,
@@ -81,18 +77,16 @@ export async function listGroupMembers(params: { groupId: string; top?: number }
   }));
 }
 
-export async function addGroupMember(params: { groupId: string; userId: string }) {
+export async function addGroupMember(client: Client, params: { groupId: string; userId: string }) {
   const { groupId, userId } = params;
-  const client = getGraphClient();
   await client.api(`/groups/${groupId}/members/$ref`).post({
     "@odata.id": `https://graph.microsoft.com/v1.0/directoryObjects/${userId}`,
   });
   return { success: true, message: "Mitglied hinzugefügt." };
 }
 
-export async function removeGroupMember(params: { groupId: string; userId: string }) {
+export async function removeGroupMember(client: Client, params: { groupId: string; userId: string }) {
   const { groupId, userId } = params;
-  const client = getGraphClient();
   await client.api(`/groups/${groupId}/members/${userId}/$ref`).delete();
   return { success: true, message: "Mitglied entfernt." };
 }

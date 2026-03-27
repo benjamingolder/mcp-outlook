@@ -1,7 +1,6 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listTodoLists() {
-  const client = getGraphClient();
+export async function listTodoLists(client: Client) {
   const result = await client.api("/me/todo/lists").get();
   return result.value.map((l: any) => ({
     id: l.id,
@@ -11,9 +10,8 @@ export async function listTodoLists() {
   }));
 }
 
-export async function listTasks(params: { listId: string; filter?: string; top?: number }) {
+export async function listTasks(client: Client, params: { listId: string; filter?: string; top?: number }) {
   const { listId, filter, top = 20 } = params;
-  const client = getGraphClient();
 
   let req = client
     .api(`/me/todo/lists/${listId}/tasks`)
@@ -34,7 +32,7 @@ export async function listTasks(params: { listId: string; filter?: string; top?:
   }));
 }
 
-export async function createTask(params: {
+export async function createTask(client: Client, params: {
   listId: string;
   title: string;
   body?: string;
@@ -42,7 +40,6 @@ export async function createTask(params: {
   importance?: "low" | "normal" | "high";
 }) {
   const { listId, title, body, dueDateTime, importance = "normal" } = params;
-  const client = getGraphClient();
 
   const task: Record<string, unknown> = { title, importance };
   if (body) task.body = { contentType: "text", content: body };
@@ -52,7 +49,7 @@ export async function createTask(params: {
   return { id: result.id, title: result.title, status: result.status };
 }
 
-export async function updateTask(params: {
+export async function updateTask(client: Client, params: {
   listId: string;
   taskId: string;
   title?: string;
@@ -62,7 +59,6 @@ export async function updateTask(params: {
   body?: string;
 }) {
   const { listId, taskId, title, status, importance, dueDateTime, body } = params;
-  const client = getGraphClient();
 
   const patch: Record<string, unknown> = {};
   if (title) patch.title = title;
@@ -75,9 +71,8 @@ export async function updateTask(params: {
   return { success: true, message: "Aufgabe aktualisiert." };
 }
 
-export async function deleteTask(params: { listId: string; taskId: string }) {
+export async function deleteTask(client: Client, params: { listId: string; taskId: string }) {
   const { listId, taskId } = params;
-  const client = getGraphClient();
   await client.api(`/me/todo/lists/${listId}/tasks/${taskId}`).delete();
   return { success: true, message: "Aufgabe gelöscht." };
 }

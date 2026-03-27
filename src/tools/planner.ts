@@ -1,8 +1,7 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listPlans(params: { groupId: string }) {
+export async function listPlans(client: Client, params: { groupId: string }) {
   const { groupId } = params;
-  const client = getGraphClient();
   const result = await client.api(`/groups/${groupId}/planner/plans`).get();
   return result.value.map((p: any) => ({
     id: p.id,
@@ -12,9 +11,8 @@ export async function listPlans(params: { groupId: string }) {
   }));
 }
 
-export async function listMyPlannerTasks(params: { top?: number }) {
+export async function listMyPlannerTasks(client: Client, params: { top?: number }) {
   const { top = 20 } = params;
-  const client = getGraphClient();
   const result = await client.api("/me/planner/tasks").top(top).get();
   return result.value.map((t: any) => ({
     id: t.id,
@@ -30,9 +28,8 @@ export async function listMyPlannerTasks(params: { top?: number }) {
   }));
 }
 
-export async function listBuckets(params: { planId: string }) {
+export async function listBuckets(client: Client, params: { planId: string }) {
   const { planId } = params;
-  const client = getGraphClient();
   const result = await client.api(`/planner/plans/${planId}/buckets`).get();
   return result.value.map((b: any) => ({
     id: b.id,
@@ -42,9 +39,8 @@ export async function listBuckets(params: { planId: string }) {
   }));
 }
 
-export async function listPlanTasks(params: { planId: string }) {
+export async function listPlanTasks(client: Client, params: { planId: string }) {
   const { planId } = params;
-  const client = getGraphClient();
   const result = await client.api(`/planner/plans/${planId}/tasks`).get();
   return result.value.map((t: any) => ({
     id: t.id,
@@ -57,7 +53,7 @@ export async function listPlanTasks(params: { planId: string }) {
   }));
 }
 
-export async function createPlannerTask(params: {
+export async function createPlannerTask(client: Client, params: {
   planId: string;
   title: string;
   bucketId?: string;
@@ -66,7 +62,6 @@ export async function createPlannerTask(params: {
   priority?: number;
 }) {
   const { planId, title, bucketId, dueDateTime, assignedToUserIds = [], priority } = params;
-  const client = getGraphClient();
 
   const task: Record<string, unknown> = { planId, title };
   if (bucketId) task.bucketId = bucketId;
@@ -82,7 +77,7 @@ export async function createPlannerTask(params: {
   return { id: result.id, title: result.title, planId: result.planId };
 }
 
-export async function updatePlannerTask(params: {
+export async function updatePlannerTask(client: Client, params: {
   taskId: string;
   title?: string;
   percentComplete?: number;
@@ -91,7 +86,6 @@ export async function updatePlannerTask(params: {
   bucketId?: string;
 }) {
   const { taskId, ...patch } = params;
-  const client = getGraphClient();
 
   // Etag needed for PATCH on planner tasks
   const existing = await client.api(`/planner/tasks/${taskId}`).get();
@@ -105,9 +99,8 @@ export async function updatePlannerTask(params: {
   return { success: true, message: "Planner-Aufgabe aktualisiert." };
 }
 
-export async function deletePlannerTask(params: { taskId: string }) {
+export async function deletePlannerTask(client: Client, params: { taskId: string }) {
   const { taskId } = params;
-  const client = getGraphClient();
 
   const existing = await client.api(`/planner/tasks/${taskId}`).get();
   const etag = existing["@odata.etag"];

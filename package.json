@@ -11,9 +11,10 @@
     "@azure/msal-node": "^2.16.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@modelcontextprotocol/sdk": "^1.5.0",
-    "dotenv": "^16.4.5",
     "cors": "^2.8.5",
-    "express": "^4.21.0"
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "jose": "^6.2.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

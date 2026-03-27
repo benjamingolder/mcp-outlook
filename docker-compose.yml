@@ -4,35 +4,13 @@ services:
     pull_policy: always
     container_name: mcp-outlook
     environment:
-      CLIENT_ID: 5cc1a755-7f1d-4759-9365-20930f6ad850
-      TENANT_ID: fb5d451c-7084-4a3f-aae4-660c623db61a
-      TOKEN_CACHE_PATH: /data/token-cache.json
-      API_KEY: ${API_KEY}
+      ENTRA_TENANT_ID: ${ENTRA_TENANT_ID}
+      ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID}
+      ENTRA_CLIENT_SECRET: ${ENTRA_CLIENT_SECRET}
+      COPILOT_CLIENT_ID: ${COPILOT_CLIENT_ID}
+      COPILOT_CLIENT_SECRET: ${COPILOT_CLIENT_SECRET}
+      APP_URL: ${APP_URL}
       PORT: 3000
     ports:
       - "3000:3000"
-    volumes:
-      - mcp-data:/data
     restart: unless-stopped
-
-  mcp-outlook-work:
-    image: ghcr.io/benjamingolder/mcp-outlook:latest
-    pull_policy: always
-    container_name: mcp-outlook-work
-    environment:
-      # Private App Registration als Multi-Tenant → Zugriff auf Geschäfts-Tenant
-      CLIENT_ID: 5cc1a755-7f1d-4759-9365-20930f6ad850
-      TENANT_ID: organizations
-      SCOPE_PRESET: work
-      TOKEN_CACHE_PATH: /data/token-cache.json
-      API_KEY: ${WORK_API_KEY}
-      PORT: 3002
-    ports:
-      - "3002:3002"
-    volumes:
-      - mcp-work-data:/data
-    restart: unless-stopped
-
-volumes:
-  mcp-data:
-  mcp-work-data:

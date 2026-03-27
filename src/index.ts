@@ -4,6 +4,10 @@ import cors from "cors";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { Client } from "@microsoft/microsoft-graph-client";
+import { entraAuthMiddleware } from "./entraAuth.js";
+import { getGraphTokenViaObo } from "./obo.js";
+import { getGraphClient } from "./graph.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -47,7 +51,7 @@ import { listUsers, getUser, listGroups, listGroupMembers, addGroupMember, remov
 import { getMyPresence, getUserPresence, getPresenceForUsers, setMyPresence } from "./tools/presence.js";
 import { listBookingBusinesses, listBookingServices, listBookingAppointments, createBookingAppointment, cancelBookingAppointment } from "./tools/bookings.js";
 
-function createMcpServer(): Server {
+function createMcpServer(client: Client): Server {
   const server = new Server(
     {
       name: "outlook-mcp",
@@ -1032,106 +1036,106 @@ function createMcpServer(): Server {
       let result: unknown;
 
       switch (name) {
-        case "list_emails":     result = await listEmails(args as any); break;
-        case "read_email":      result = await readEmail((args as any).id); break;
-        case "send_email":      result = await sendEmail(args as any); break;
-        case "reply_to_email":  result = await replyToEmail(args as any); break;
-        case "list_events":     result = await listEvents(args as any); break;
-        case "get_event":       result = await getEvent((args as any).id); break;
-        case "create_event":    result = await createEvent(args as any); break;
-        case "update_event":    result = await updateEvent(args as any); break;
-        case "delete_event":          result = await deleteEvent((args as any).id); break;
+        case "list_emails":     result = await listEmails(client, args as any); break;
+        case "read_email":      result = await readEmail(client, (args as any).id); break;
+        case "send_email":      result = await sendEmail(client, args as any); break;
+        case "reply_to_email":  result = await replyToEmail(client, args as any); break;
+        case "list_events":     result = await listEvents(client, args as any); break;
+        case "get_event":       result = await getEvent(client, (args as any).id); break;
+        case "create_event":    result = await createEvent(client, args as any); break;
+        case "update_event":    result = await updateEvent(client, args as any); break;
+        case "delete_event":          result = await deleteEvent(client, (args as any).id); break;
         // To Do
-        case "list_todo_lists":       result = await listTodoLists(); break;
-        case "list_tasks":            result = await listTasks(args as any); break;
-        case "create_task":           result = await createTask(args as any); break;
-        case "update_task":           result = await updateTask(args as any); break;
-        case "delete_task":           result = await deleteTask(args as any); break;
+        case "list_todo_lists":       result = await listTodoLists(client); break;
+        case "list_tasks":            result = await listTasks(client, args as any); break;
+        case "create_task":           result = await createTask(client, args as any); break;
+        case "update_task":           result = await updateTask(client, args as any); break;
+        case "delete_task":           result = await deleteTask(client, args as any); break;
         // SharePoint
-        case "list_sharepoint_sites":          result = await listSharepointSites(args as any); break;
-        case "get_sharepoint_site":            result = await getSharepointSite(args as any); break;
-        case "list_sharepoint_files":          result = await listSharepointFiles(args as any); break;
-        case "search_sharepoint":              result = await searchSharepoint(args as any); break;
-        case "list_sharepoint_lists":          result = await listSharepointLists(args as any); break;
-        case "get_sharepoint_list":            result = await getSharepointList(args as any); break;
-        case "create_sharepoint_list":         result = await createSharepointList(args as any); break;
-        case "update_sharepoint_list":         result = await updateSharepointList(args as any); break;
-        case "delete_sharepoint_list":         result = await deleteSharepointList(args as any); break;
-        case "list_sharepoint_list_items":     result = await listSharepointListItems(args as any); break;
-        case "get_sharepoint_list_item":       result = await getSharepointListItem(args as any); break;
-        case "create_sharepoint_list_item":    result = await createSharepointListItem(args as any); break;
-        case "update_sharepoint_list_item":    result = await updateSharepointListItem(args as any); break;
-        case "delete_sharepoint_list_item":    result = await deleteSharepointListItem(args as any); break;
-        case "create_sharepoint_folder":       result = await createSharepointFolder(args as any); break;
-        case "upload_sharepoint_file":         result = await uploadSharepointFile(args as any); break;
-        case "delete_sharepoint_file":         result = await deleteSharepointFile(args as any); break;
-        case "move_sharepoint_file":           result = await moveSharepointFile(args as any); break;
+        case "list_sharepoint_sites":          result = await listSharepointSites(client, args as any); break;
+        case "get_sharepoint_site":            result = await getSharepointSite(client, args as any); break;
+        case "list_sharepoint_files":          result = await listSharepointFiles(client, args as any); break;
+        case "search_sharepoint":              result = await searchSharepoint(client, args as any); break;
+        case "list_sharepoint_lists":          result = await listSharepointLists(client, args as any); break;
+        case "get_sharepoint_list":            result = await getSharepointList(client, args as any); break;
+        case "create_sharepoint_list":         result = await createSharepointList(client, args as any); break;
+        case "update_sharepoint_list":         result = await updateSharepointList(client, args as any); break;
+        case "delete_sharepoint_list":         result = await deleteSharepointList(client, args as any); break;
+        case "list_sharepoint_list_items":     result = await listSharepointListItems(client, args as any); break;
+        case "get_sharepoint_list_item":       result = await getSharepointListItem(client, args as any); break;
+        case "create_sharepoint_list_item":    result = await createSharepointListItem(client, args as any); break;
+        case "update_sharepoint_list_item":    result = await updateSharepointListItem(client, args as any); break;
+        case "delete_sharepoint_list_item":    result = await deleteSharepointListItem(client, args as any); break;
+        case "create_sharepoint_folder":       result = await createSharepointFolder(client, args as any); break;
+        case "upload_sharepoint_file":         result = await uploadSharepointFile(client, args as any); break;
+        case "delete_sharepoint_file":         result = await deleteSharepointFile(client, args as any); break;
+        case "move_sharepoint_file":           result = await moveSharepointFile(client, args as any); break;
         // OneDrive
-        case "list_onedrive_files":            result = await listOneDriveFiles(args as any); break;
-        case "search_onedrive":                result = await searchOneDrive(args as any); break;
-        case "get_onedrive_file_info":         result = await getOneDriveFileInfo(args as any); break;
-        case "create_onedrive_folder":         result = await createOneDriveFolder(args as any); break;
-        case "upload_onedrive_file":           result = await uploadOneDriveFile(args as any); break;
-        case "delete_onedrive_item":           result = await deleteOneDriveItem(args as any); break;
-        case "move_onedrive_item":             result = await moveOneDriveItem(args as any); break;
-        case "rename_onedrive_item":           result = await renameOneDriveItem(args as any); break;
-        case "copy_onedrive_item":             result = await copyOneDriveItem(args as any); break;
+        case "list_onedrive_files":            result = await listOneDriveFiles(client, args as any); break;
+        case "search_onedrive":                result = await searchOneDrive(client, args as any); break;
+        case "get_onedrive_file_info":         result = await getOneDriveFileInfo(client, args as any); break;
+        case "create_onedrive_folder":         result = await createOneDriveFolder(client, args as any); break;
+        case "upload_onedrive_file":           result = await uploadOneDriveFile(client, args as any); break;
+        case "delete_onedrive_item":           result = await deleteOneDriveItem(client, args as any); break;
+        case "move_onedrive_item":             result = await moveOneDriveItem(client, args as any); break;
+        case "rename_onedrive_item":           result = await renameOneDriveItem(client, args as any); break;
+        case "copy_onedrive_item":             result = await copyOneDriveItem(client, args as any); break;
         // Contacts
-        case "list_contacts":                  result = await listContacts(args as any); break;
-        case "get_contact":                    result = await getContact((args as any).id); break;
-        case "create_contact":                 result = await createContact(args as any); break;
-        case "update_contact":                 result = await updateContact(args as any); break;
-        case "delete_contact":                 result = await deleteContact((args as any).id); break;
+        case "list_contacts":                  result = await listContacts(client, args as any); break;
+        case "get_contact":                    result = await getContact(client, (args as any).id); break;
+        case "create_contact":                 result = await createContact(client, args as any); break;
+        case "update_contact":                 result = await updateContact(client, args as any); break;
+        case "delete_contact":                 result = await deleteContact(client, (args as any).id); break;
         // Teams
-        case "list_teams":                     result = await listTeams(args as any); break;
-        case "list_channels":                  result = await listChannels(args as any); break;
-        case "list_channel_messages":          result = await listChannelMessages(args as any); break;
-        case "send_channel_message":           result = await sendChannelMessage(args as any); break;
-        case "list_chats":                     result = await listChats(args as any); break;
-        case "list_chat_messages":             result = await listChatMessages(args as any); break;
-        case "send_chat_message":              result = await sendChatMessage(args as any); break;
+        case "list_teams":                     result = await listTeams(client, args as any); break;
+        case "list_channels":                  result = await listChannels(client, args as any); break;
+        case "list_channel_messages":          result = await listChannelMessages(client, args as any); break;
+        case "send_channel_message":           result = await sendChannelMessage(client, args as any); break;
+        case "list_chats":                     result = await listChats(client, args as any); break;
+        case "list_chat_messages":             result = await listChatMessages(client, args as any); break;
+        case "send_chat_message":              result = await sendChatMessage(client, args as any); break;
         // OneNote
-        case "list_notebooks":                 result = await listNotebooks(args as any); break;
-        case "list_sections":                  result = await listSections(args as any); break;
-        case "list_pages":                     result = await listPages(args as any); break;
-        case "get_page":                       result = await getPage(args as any); break;
-        case "create_page":                    result = await createPage(args as any); break;
+        case "list_notebooks":                 result = await listNotebooks(client, args as any); break;
+        case "list_sections":                  result = await listSections(client, args as any); break;
+        case "list_pages":                     result = await listPages(client, args as any); break;
+        case "get_page":                       result = await getPage(client, args as any); break;
+        case "create_page":                    result = await createPage(client, args as any); break;
         // Planner
-        case "list_my_planner_tasks":          result = await listMyPlannerTasks(args as any); break;
-        case "list_plans":                     result = await listPlans(args as any); break;
-        case "list_buckets":                   result = await listBuckets(args as any); break;
-        case "list_plan_tasks":                result = await listPlanTasks(args as any); break;
-        case "create_planner_task":            result = await createPlannerTask(args as any); break;
-        case "update_planner_task":            result = await updatePlannerTask(args as any); break;
-        case "delete_planner_task":            result = await deletePlannerTask(args as any); break;
+        case "list_my_planner_tasks":          result = await listMyPlannerTasks(client, args as any); break;
+        case "list_plans":                     result = await listPlans(client, args as any); break;
+        case "list_buckets":                   result = await listBuckets(client, args as any); break;
+        case "list_plan_tasks":                result = await listPlanTasks(client, args as any); break;
+        case "create_planner_task":            result = await createPlannerTask(client, args as any); break;
+        case "update_planner_task":            result = await updatePlannerTask(client, args as any); break;
+        case "delete_planner_task":            result = await deletePlannerTask(client, args as any); break;
         // Excel
-        case "list_worksheets":                result = await listWorksheets(args as any); break;
-        case "get_range":                      result = await getRange(args as any); break;
-        case "get_used_range":                 result = await getUsedRange(args as any); break;
-        case "update_range":                   result = await updateRange(args as any); break;
+        case "list_worksheets":                result = await listWorksheets(client, args as any); break;
+        case "get_range":                      result = await getRange(client, args as any); break;
+        case "get_used_range":                 result = await getUsedRange(client, args as any); break;
+        case "update_range":                   result = await updateRange(client, args as any); break;
         // People & Insights
-        case "list_relevant_people":           result = await listRelevantPeople(args as any); break;
-        case "list_trending_documents":        result = await listTrendingDocuments(args as any); break;
-        case "list_used_documents":            result = await listUsedDocuments(args as any); break;
-        case "list_shared_documents":          result = await listSharedDocuments(args as any); break;
+        case "list_relevant_people":           result = await listRelevantPeople(client, args as any); break;
+        case "list_trending_documents":        result = await listTrendingDocuments(client, args as any); break;
+        case "list_used_documents":            result = await listUsedDocuments(client, args as any); break;
+        case "list_shared_documents":          result = await listSharedDocuments(client, args as any); break;
         // Directory
-        case "list_users":                     result = await listUsers(args as any); break;
-        case "get_user":                       result = await getUser(args as any); break;
-        case "list_groups":                    result = await listGroups(args as any); break;
-        case "list_group_members":             result = await listGroupMembers(args as any); break;
-        case "add_group_member":               result = await addGroupMember(args as any); break;
-        case "remove_group_member":            result = await removeGroupMember(args as any); break;
+        case "list_users":                     result = await listUsers(client, args as any); break;
+        case "get_user":                       result = await getUser(client, args as any); break;
+        case "list_groups":                    result = await listGroups(client, args as any); break;
+        case "list_group_members":             result = await listGroupMembers(client, args as any); break;
+        case "add_group_member":               result = await addGroupMember(client, args as any); break;
+        case "remove_group_member":            result = await removeGroupMember(client, args as any); break;
         // Presence
-        case "get_my_presence":                result = await getMyPresence(); break;
-        case "get_user_presence":              result = await getUserPresence(args as any); break;
-        case "get_presence_for_users":         result = await getPresenceForUsers(args as any); break;
-        case "set_my_presence":                result = await setMyPresence(args as any); break;
+        case "get_my_presence":                result = await getMyPresence(client); break;
+        case "get_user_presence":              result = await getUserPresence(client, args as any); break;
+        case "get_presence_for_users":         result = await getPresenceForUsers(client, args as any); break;
+        case "set_my_presence":                result = await setMyPresence(client, args as any); break;
         // Bookings
-        case "list_booking_businesses":        result = await listBookingBusinesses(); break;
-        case "list_booking_services":          result = await listBookingServices(args as any); break;
-        case "list_booking_appointments":      result = await listBookingAppointments(args as any); break;
-        case "create_booking_appointment":     result = await createBookingAppointment(args as any); break;
-        case "cancel_booking_appointment":     result = await cancelBookingAppointment(args as any); break;
+        case "list_booking_businesses":        result = await listBookingBusinesses(client); break;
+        case "list_booking_services":          result = await listBookingServices(client, args as any); break;
+        case "list_booking_appointments":      result = await listBookingAppointments(client, args as any); break;
+        case "create_booking_appointment":     result = await createBookingAppointment(client, args as any); break;
+        case "cancel_booking_appointment":     result = await cancelBookingAppointment(client, args as any); break;
         default:
           throw new McpError(ErrorCode.MethodNotFound, `Unbekanntes Tool: ${name}`);
       }
@@ -1151,43 +1155,91 @@ function createMcpServer(): Server {
   return server;
 }
 
-// Express HTTP-Server
+// ── Express Setup ──────────────────────────────────────────────────────────────
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use((req, _res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
   next();
 });
 
-// API Key Authentifizierung (außer /health)
-app.use((req, res, next) => {
-  if (req.path === "/health") return next();
-
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) return next(); // Kein Key konfiguriert → offen
-
-  const authHeader = req.headers["authorization"];
-  const queryKey = req.query["apikey"];
-
-  const validHeader = authHeader === `Bearer ${apiKey}`;
-  const validQuery = queryKey === apiKey;
-
-  if (!validHeader && !validQuery) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  next();
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", service: "mcp-outlook" });
 });
 
-// StreamableHTTP Transport (neueres Protokoll)
-app.post("/mcp", async (req, res) => {
-  console.log("POST /mcp - body:", JSON.stringify(req.body));
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
+app.get("/icon.svg", (_req, res) => {
+  const icon = readFileSync(join(__dirname, "icon.svg"));
+  res.setHeader("Content-Type", "image/svg+xml");
+  res.send(icon);
+});
+
+// ── OAuth 2.0 Dynamic Client Registration (DCR) ────────────────────────────────
+
+const tenantId = process.env.ENTRA_TENANT_ID!;
+const clientId = process.env.ENTRA_CLIENT_ID!;
+const copilotClientId = process.env.COPILOT_CLIENT_ID!;
+const copilotClientSecret = process.env.COPILOT_CLIENT_SECRET!;
+const appUrl = process.env.APP_URL!;
+const scope = `api://${clientId}/access`;
+
+const authServerMetadata = {
+  issuer: `https://login.microsoftonline.com/${tenantId}/v2.0`,
+  authorization_endpoint: `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize`,
+  token_endpoint: `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
+  registration_endpoint: `${appUrl}/register`,
+  scopes_supported: [scope, "openid", "profile", "offline_access"],
+  response_types_supported: ["code"],
+  grant_types_supported: ["authorization_code", "refresh_token"],
+  code_challenge_methods_supported: ["S256"],
+  token_endpoint_auth_methods_supported: ["none"],
+};
+
+const protectedResourceMetadata = {
+  resource: appUrl,
+  authorization_servers: [`https://login.microsoftonline.com/${tenantId}/v2.0`],
+  scopes_supported: [scope],
+  bearer_methods_supported: ["header"],
+};
+
+// Discovery endpoints – must be reachable without Bearer token
+app.get(["/.well-known/oauth-authorization-server", "/.well-known/oauth-authorization-server/*"],
+  (req, res) => {
+    console.log(`[Discovery] oauth-authorization-server hit: ${req.path}`);
+    res.json(authServerMetadata);
   });
-  const server = createMcpServer();
+
+app.get(["/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/*"],
+  (req, res) => {
+    console.log(`[Discovery] oauth-protected-resource hit: ${req.path}`);
+    res.json(protectedResourceMetadata);
+  });
+
+app.post("/register", (req, res) => {
+  console.log(`[Discovery] /register hit from ${req.ip}`);
+  res.status(201).json({
+    client_id: copilotClientId,
+    client_secret: copilotClientSecret,
+    client_name: "mcp-outlook-client",
+    grant_types: ["authorization_code", "refresh_token"],
+    response_types: ["code"],
+    scope: `${scope} offline_access`,
+    token_endpoint_auth_method: "client_secret_post",
+  });
+});
+
+// ── All MCP endpoints require Entra ID Auth ────────────────────────────────────
+app.use(entraAuthMiddleware);
+
+// StreamableHTTP Transport (neueres Protokoll)
+app.all("/mcp", async (req, res) => {
+  const graphToken = await getGraphTokenViaObo(req.accessToken!);
+  const client = getGraphClient(graphToken);
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  const server = createMcpServer(client);
   try {
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
@@ -1205,43 +1257,35 @@ app.post("/mcp", async (req, res) => {
   }
 });
 
-app.get("/mcp", (_req, res) => {
-  res.status(405).json({ error: "Method Not Allowed. Use POST for MCP requests." });
-});
-
 // SSE Transport (älteres Protokoll)
-const sseTransports = new Map<string, SSEServerTransport>();
+interface SseSession {
+  transport: SSEServerTransport;
+  client: Client;
+}
+const sseSessions = new Map<string, SseSession>();
 
 app.get("/sse", async (req, res) => {
   console.log("GET /sse - neue Verbindung");
+  const graphToken = await getGraphTokenViaObo(req.accessToken!);
+  const client = getGraphClient(graphToken);
   const transport = new SSEServerTransport("/messages", res);
-  sseTransports.set(transport.sessionId, transport);
-  res.on("close", () => sseTransports.delete(transport.sessionId));
-  const server = createMcpServer();
+  sseSessions.set(transport.sessionId, { transport, client });
+  res.on("close", () => sseSessions.delete(transport.sessionId));
+  const server = createMcpServer(client);
   await server.connect(transport);
 });
 
 app.post("/messages", async (req, res) => {
   const sessionId = req.query.sessionId as string;
-  const transport = sseTransports.get(sessionId);
-  if (!transport) {
+  const session = sseSessions.get(sessionId);
+  if (!session) {
     res.status(404).json({ error: "Session nicht gefunden" });
     return;
   }
-  await transport.handlePostMessage(req, res);
-});
-
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "mcp-outlook" });
-});
-
-app.get("/icon.svg", (_req, res) => {
-  const icon = readFileSync(join(__dirname, "icon.svg"));
-  res.setHeader("Content-Type", "image/svg+xml");
-  res.send(icon);
+  await session.transport.handlePostMessage(req, res);
 });
 
 const PORT = parseInt(process.env.PORT ?? "3000");
 app.listen(PORT, () => {
-  console.log(`MCP Outlook Server läuft auf Port ${PORT}`);
+  console.log(`MCP Outlook Server v2 läuft auf Port ${PORT}`);
 });

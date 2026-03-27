@@ -1,7 +1,6 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listBookingBusinesses() {
-  const client = getGraphClient();
+export async function listBookingBusinesses(client: Client) {
   const result = await client.api("/solutions/bookingBusinesses").get();
   return result.value.map((b: any) => ({
     id: b.id,
@@ -13,9 +12,8 @@ export async function listBookingBusinesses() {
   }));
 }
 
-export async function listBookingServices(params: { businessId: string }) {
+export async function listBookingServices(client: Client, params: { businessId: string }) {
   const { businessId } = params;
-  const client = getGraphClient();
   const result = await client.api(`/solutions/bookingBusinesses/${businessId}/services`).get();
   return result.value.map((s: any) => ({
     id: s.id,
@@ -28,13 +26,12 @@ export async function listBookingServices(params: { businessId: string }) {
   }));
 }
 
-export async function listBookingAppointments(params: {
+export async function listBookingAppointments(client: Client, params: {
   businessId: string;
   start?: string;
   end?: string;
 }) {
   const { businessId, start, end } = params;
-  const client = getGraphClient();
 
   let req = client.api(`/solutions/bookingBusinesses/${businessId}/appointments`);
   if (start && end) {
@@ -56,7 +53,7 @@ export async function listBookingAppointments(params: {
   }));
 }
 
-export async function createBookingAppointment(params: {
+export async function createBookingAppointment(client: Client, params: {
   businessId: string;
   serviceId: string;
   startDateTime: string;
@@ -81,7 +78,6 @@ export async function createBookingAppointment(params: {
     notes,
   } = params;
 
-  const client = getGraphClient();
   const result = await client
     .api(`/solutions/bookingBusinesses/${businessId}/appointments`)
     .post({
@@ -102,13 +98,12 @@ export async function createBookingAppointment(params: {
   return { id: result.id, serviceName: result.serviceName, start: result.startDateTime };
 }
 
-export async function cancelBookingAppointment(params: {
+export async function cancelBookingAppointment(client: Client, params: {
   businessId: string;
   appointmentId: string;
   reason?: string;
 }) {
   const { businessId, appointmentId, reason = "" } = params;
-  const client = getGraphClient();
   await client
     .api(`/solutions/bookingBusinesses/${businessId}/appointments/${appointmentId}/cancel`)
     .post({ cancellationMessage: reason });

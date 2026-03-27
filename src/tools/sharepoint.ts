@@ -1,8 +1,7 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listSharepointSites(params: { search?: string; top?: number }) {
+export async function listSharepointSites(client: Client, params: { search?: string; top?: number }) {
   const { search = "", top = 10 } = params;
-  const client = getGraphClient();
 
   const result = await client
     .api("/sites")
@@ -19,9 +18,8 @@ export async function listSharepointSites(params: { search?: string; top?: numbe
   }));
 }
 
-export async function getSharepointSite(params: { siteId: string }) {
+export async function getSharepointSite(client: Client, params: { siteId: string }) {
   const { siteId } = params;
-  const client = getGraphClient();
 
   const s = await client.api(`/sites/${siteId}`).get();
   return {
@@ -35,14 +33,13 @@ export async function getSharepointSite(params: { siteId: string }) {
   };
 }
 
-export async function listSharepointFiles(params: {
+export async function listSharepointFiles(client: Client, params: {
   siteId: string;
   driveId?: string;
   folderId?: string;
   top?: number;
 }) {
   const { siteId, driveId, folderId, top = 20 } = params;
-  const client = getGraphClient();
 
   let path: string;
   if (driveId && folderId) {
@@ -65,9 +62,8 @@ export async function listSharepointFiles(params: {
   }));
 }
 
-export async function listSharepointLists(params: { siteId: string; top?: number }) {
+export async function listSharepointLists(client: Client, params: { siteId: string; top?: number }) {
   const { siteId, top = 20 } = params;
-  const client = getGraphClient();
 
   const result = await client.api(`/sites/${siteId}/lists`).top(top).get();
   return result.value.map((l: any) => ({
@@ -80,9 +76,8 @@ export async function listSharepointLists(params: { siteId: string; top?: number
   }));
 }
 
-export async function getSharepointList(params: { siteId: string; listId: string }) {
+export async function getSharepointList(client: Client, params: { siteId: string; listId: string }) {
   const { siteId, listId } = params;
-  const client = getGraphClient();
 
   const l = await client.api(`/sites/${siteId}/lists/${listId}`).get();
   return {
@@ -97,14 +92,13 @@ export async function getSharepointList(params: { siteId: string; listId: string
   };
 }
 
-export async function updateSharepointList(params: {
+export async function updateSharepointList(client: Client, params: {
   siteId: string;
   listId: string;
   displayName?: string;
   description?: string;
 }) {
   const { siteId, listId, displayName, description } = params;
-  const client = getGraphClient();
 
   const body: Record<string, unknown> = {};
   if (displayName) body.displayName = displayName;
@@ -114,22 +108,20 @@ export async function updateSharepointList(params: {
   return { success: true, message: "Liste aktualisiert." };
 }
 
-export async function deleteSharepointList(params: { siteId: string; listId: string }) {
+export async function deleteSharepointList(client: Client, params: { siteId: string; listId: string }) {
   const { siteId, listId } = params;
-  const client = getGraphClient();
 
   await client.api(`/sites/${siteId}/lists/${listId}`).delete();
   return { success: true, message: "Liste gelöscht." };
 }
 
-export async function createSharepointList(params: {
+export async function createSharepointList(client: Client, params: {
   siteId: string;
   displayName: string;
   description?: string;
   columns: { name: string; type: "text" | "number" | "boolean" | "dateTime" | "choice"; choices?: string[] }[];
 }) {
   const { siteId, displayName, description, columns } = params;
-  const client = getGraphClient();
 
   const columnDefs = columns.map((col) => {
     const def: Record<string, unknown> = { name: col.name };
@@ -155,14 +147,13 @@ export async function createSharepointList(params: {
   };
 }
 
-export async function listSharepointListItems(params: {
+export async function listSharepointListItems(client: Client, params: {
   siteId: string;
   listId: string;
   top?: number;
   filter?: string;
 }) {
   const { siteId, listId, top = 20, filter } = params;
-  const client = getGraphClient();
 
   let req = client
     .api(`/sites/${siteId}/lists/${listId}/items`)
@@ -181,13 +172,12 @@ export async function listSharepointListItems(params: {
   }));
 }
 
-export async function getSharepointListItem(params: {
+export async function getSharepointListItem(client: Client, params: {
   siteId: string;
   listId: string;
   itemId: string;
 }) {
   const { siteId, listId, itemId } = params;
-  const client = getGraphClient();
 
   const item = await client
     .api(`/sites/${siteId}/lists/${listId}/items/${itemId}`)
@@ -203,13 +193,12 @@ export async function getSharepointListItem(params: {
   };
 }
 
-export async function createSharepointListItem(params: {
+export async function createSharepointListItem(client: Client, params: {
   siteId: string;
   listId: string;
   fields: Record<string, unknown>;
 }) {
   const { siteId, listId, fields } = params;
-  const client = getGraphClient();
 
   const result = await client
     .api(`/sites/${siteId}/lists/${listId}/items`)
@@ -218,14 +207,13 @@ export async function createSharepointListItem(params: {
   return { id: result.id, webUrl: result.webUrl, fields: result.fields };
 }
 
-export async function updateSharepointListItem(params: {
+export async function updateSharepointListItem(client: Client, params: {
   siteId: string;
   listId: string;
   itemId: string;
   fields: Record<string, unknown>;
 }) {
   const { siteId, listId, itemId, fields } = params;
-  const client = getGraphClient();
 
   await client
     .api(`/sites/${siteId}/lists/${listId}/items/${itemId}/fields`)
@@ -234,21 +222,19 @@ export async function updateSharepointListItem(params: {
   return { success: true, message: "Eintrag aktualisiert." };
 }
 
-export async function deleteSharepointListItem(params: {
+export async function deleteSharepointListItem(client: Client, params: {
   siteId: string;
   listId: string;
   itemId: string;
 }) {
   const { siteId, listId, itemId } = params;
-  const client = getGraphClient();
 
   await client.api(`/sites/${siteId}/lists/${listId}/items/${itemId}`).delete();
   return { success: true, message: "Eintrag gelöscht." };
 }
 
-export async function searchSharepoint(params: { query: string; top?: number }) {
+export async function searchSharepoint(client: Client, params: { query: string; top?: number }) {
   const { query, top = 10 } = params;
-  const client = getGraphClient();
 
   const result = await client.api("/search/query").post({
     requests: [
@@ -271,14 +257,13 @@ export async function searchSharepoint(params: { query: string; top?: number }) 
   }));
 }
 
-export async function createSharepointFolder(params: {
+export async function createSharepointFolder(client: Client, params: {
   siteId: string;
   driveId?: string;
   parentId?: string;
   folderName: string;
 }) {
   const { siteId, driveId, parentId, folderName } = params;
-  const client = getGraphClient();
 
   let path: string;
   if (driveId && parentId) {
@@ -305,7 +290,7 @@ export async function createSharepointFolder(params: {
   };
 }
 
-export async function uploadSharepointFile(params: {
+export async function uploadSharepointFile(client: Client, params: {
   siteId: string;
   driveId?: string;
   parentId?: string;
@@ -314,7 +299,6 @@ export async function uploadSharepointFile(params: {
   mimeType?: string;
 }) {
   const { siteId, driveId, parentId, fileName, content, mimeType = "text/plain" } = params;
-  const client = getGraphClient();
 
   let path: string;
   const encodedName = encodeURIComponent(fileName);
@@ -340,13 +324,12 @@ export async function uploadSharepointFile(params: {
   };
 }
 
-export async function deleteSharepointFile(params: {
+export async function deleteSharepointFile(client: Client, params: {
   siteId: string;
   driveId?: string;
   itemId: string;
 }) {
   const { siteId, driveId, itemId } = params;
-  const client = getGraphClient();
 
   const path = driveId
     ? `/sites/${siteId}/drives/${driveId}/items/${itemId}`
@@ -356,7 +339,7 @@ export async function deleteSharepointFile(params: {
   return { success: true, message: "Datei/Ordner gelöscht." };
 }
 
-export async function moveSharepointFile(params: {
+export async function moveSharepointFile(client: Client, params: {
   siteId: string;
   driveId?: string;
   itemId: string;
@@ -364,7 +347,6 @@ export async function moveSharepointFile(params: {
   newName?: string;
 }) {
   const { siteId, driveId, itemId, destinationParentId, newName } = params;
-  const client = getGraphClient();
 
   const path = driveId
     ? `/sites/${siteId}/drives/${driveId}/items/${itemId}`

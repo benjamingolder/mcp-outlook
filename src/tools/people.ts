@@ -1,8 +1,7 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listRelevantPeople(params: { top?: number; search?: string }) {
+export async function listRelevantPeople(client: Client, params: { top?: number; search?: string }) {
   const { top = 20, search } = params;
-  const client = getGraphClient();
 
   let req = client.api("/me/people").top(top);
   if (search) req = req.search(`"${search}"`);
@@ -20,9 +19,8 @@ export async function listRelevantPeople(params: { top?: number; search?: string
   }));
 }
 
-export async function listTrendingDocuments(params: { top?: number }) {
+export async function listTrendingDocuments(client: Client, params: { top?: number }) {
   const { top = 10 } = params;
-  const client = getGraphClient();
   const result = await client.api("/me/insights/trending").top(top).get();
   return result.value.map((item: any) => ({
     id: item.id,
@@ -34,9 +32,8 @@ export async function listTrendingDocuments(params: { top?: number }) {
   }));
 }
 
-export async function listUsedDocuments(params: { top?: number }) {
+export async function listUsedDocuments(client: Client, params: { top?: number }) {
   const { top = 10 } = params;
-  const client = getGraphClient();
   const result = await client.api("/me/insights/used").top(top).get();
   return result.value.map((item: any) => ({
     id: item.id,
@@ -47,9 +44,8 @@ export async function listUsedDocuments(params: { top?: number }) {
   }));
 }
 
-export async function listSharedDocuments(params: { top?: number }) {
+export async function listSharedDocuments(client: Client, params: { top?: number }) {
   const { top = 10 } = params;
-  const client = getGraphClient();
   const result = await client.api("/me/insights/shared").top(top).get();
   return result.value.map((item: any) => ({
     id: item.id,

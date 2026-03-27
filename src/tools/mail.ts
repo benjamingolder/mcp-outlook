@@ -1,12 +1,11 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listEmails(params: {
+export async function listEmails(client: Client, params: {
   top?: number;
   folder?: string;
   filter?: string;
 }) {
   const { top = 20, folder = "inbox", filter } = params;
-  const client = getGraphClient();
 
   let req = client
     .api(`/me/mailFolders/${folder}/messages`)
@@ -27,8 +26,7 @@ export async function listEmails(params: {
   }));
 }
 
-export async function readEmail(id: string) {
-  const client = getGraphClient();
+export async function readEmail(client: Client, id: string) {
   const m = await client.api(`/me/messages/${id}`).get();
   return {
     id: m.id,
@@ -42,7 +40,7 @@ export async function readEmail(id: string) {
   };
 }
 
-export async function sendEmail(params: {
+export async function sendEmail(client: Client, params: {
   to: string[];
   subject: string;
   body: string;
@@ -50,7 +48,6 @@ export async function sendEmail(params: {
   bodyType?: "html" | "text";
 }) {
   const { to, subject, body, cc = [], bodyType = "text" } = params;
-  const client = getGraphClient();
 
   await client.api("/me/sendMail").post({
     message: {
@@ -67,14 +64,13 @@ export async function sendEmail(params: {
   return { success: true, message: "E-Mail erfolgreich gesendet." };
 }
 
-export async function replyToEmail(params: {
+export async function replyToEmail(client: Client, params: {
   id: string;
   body: string;
   replyAll?: boolean;
   bodyType?: "html" | "text";
 }) {
   const { id, body, replyAll = false, bodyType = "text" } = params;
-  const client = getGraphClient();
 
   const endpoint = replyAll
     ? `/me/messages/${id}/replyAll`

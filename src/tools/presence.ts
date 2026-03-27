@@ -1,7 +1,6 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function getMyPresence() {
-  const client = getGraphClient();
+export async function getMyPresence(client: Client) {
   const p = await client.api("/me/presence").get();
   return {
     id: p.id,
@@ -11,9 +10,8 @@ export async function getMyPresence() {
   };
 }
 
-export async function getUserPresence(params: { userId: string }) {
+export async function getUserPresence(client: Client, params: { userId: string }) {
   const { userId } = params;
-  const client = getGraphClient();
   const p = await client.api(`/users/${userId}/presence`).get();
   return {
     id: p.id,
@@ -23,9 +21,8 @@ export async function getUserPresence(params: { userId: string }) {
   };
 }
 
-export async function getPresenceForUsers(params: { userIds: string[] }) {
+export async function getPresenceForUsers(client: Client, params: { userIds: string[] }) {
   const { userIds } = params;
-  const client = getGraphClient();
   const result = await client.api("/communications/getPresencesByUserId").post({ ids: userIds });
   return result.value.map((p: any) => ({
     id: p.id,
@@ -34,13 +31,12 @@ export async function getPresenceForUsers(params: { userIds: string[] }) {
   }));
 }
 
-export async function setMyPresence(params: {
+export async function setMyPresence(client: Client, params: {
   availability: "Available" | "Busy" | "DoNotDisturb" | "BeRightBack" | "Away" | "Offline";
   activity: string;
   expirationDuration?: string;
 }) {
   const { availability, activity, expirationDuration = "PT1H" } = params;
-  const client = getGraphClient();
   await client.api("/me/presence/setPresence").post({
     sessionId: "mcp-outlook",
     availability,

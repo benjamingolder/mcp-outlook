@@ -1,8 +1,7 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listNotebooks(params: { top?: number }) {
+export async function listNotebooks(client: Client, params: { top?: number }) {
   const { top = 20 } = params;
-  const client = getGraphClient();
   const result = await client.api("/me/onenote/notebooks").top(top).get();
   return result.value.map((n: any) => ({
     id: n.id,
@@ -13,9 +12,8 @@ export async function listNotebooks(params: { top?: number }) {
   }));
 }
 
-export async function listSections(params: { notebookId: string }) {
+export async function listSections(client: Client, params: { notebookId: string }) {
   const { notebookId } = params;
-  const client = getGraphClient();
   const result = await client
     .api(`/me/onenote/notebooks/${notebookId}/sections`)
     .get();
@@ -27,9 +25,8 @@ export async function listSections(params: { notebookId: string }) {
   }));
 }
 
-export async function listPages(params: { sectionId: string; top?: number }) {
+export async function listPages(client: Client, params: { sectionId: string; top?: number }) {
   const { sectionId, top = 20 } = params;
-  const client = getGraphClient();
   const result = await client
     .api(`/me/onenote/sections/${sectionId}/pages`)
     .top(top)
@@ -43,9 +40,8 @@ export async function listPages(params: { sectionId: string; top?: number }) {
   }));
 }
 
-export async function getPage(params: { pageId: string }) {
+export async function getPage(client: Client, params: { pageId: string }) {
   const { pageId } = params;
-  const client = getGraphClient();
   const content = await client.api(`/me/onenote/pages/${pageId}/content`).getStream();
   const chunks: Buffer[] = [];
   for await (const chunk of content) {
@@ -54,13 +50,12 @@ export async function getPage(params: { pageId: string }) {
   return { content: Buffer.concat(chunks).toString("utf8") };
 }
 
-export async function createPage(params: {
+export async function createPage(client: Client, params: {
   sectionId: string;
   title: string;
   content?: string;
 }) {
   const { sectionId, title, content = "" } = params;
-  const client = getGraphClient();
   const html = `<!DOCTYPE html><html><head><title>${title}</title></head><body>${content}</body></html>`;
   const result = await client
     .api(`/me/onenote/sections/${sectionId}/pages`)

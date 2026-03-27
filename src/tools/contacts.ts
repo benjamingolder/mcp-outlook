@@ -1,8 +1,7 @@
-import { getGraphClient } from "../graph.js";
+import { Client } from "@microsoft/microsoft-graph-client";
 
-export async function listContacts(params: { top?: number; filter?: string; search?: string }) {
+export async function listContacts(client: Client, params: { top?: number; filter?: string; search?: string }) {
   const { top = 20, filter, search } = params;
-  const client = getGraphClient();
 
   let req = client
     .api("/me/contacts")
@@ -25,8 +24,7 @@ export async function listContacts(params: { top?: number; filter?: string; sear
   }));
 }
 
-export async function getContact(id: string) {
-  const client = getGraphClient();
+export async function getContact(client: Client, id: string) {
   const c = await client.api(`/me/contacts/${id}`).get();
   return {
     id: c.id,
@@ -47,7 +45,7 @@ export async function getContact(id: string) {
   };
 }
 
-export async function createContact(params: {
+export async function createContact(client: Client, params: {
   givenName: string;
   surname?: string;
   emailAddresses?: { address: string; name?: string }[];
@@ -57,12 +55,11 @@ export async function createContact(params: {
   companyName?: string;
   department?: string;
 }) {
-  const client = getGraphClient();
   const result = await client.api("/me/contacts").post(params);
   return { id: result.id, displayName: result.displayName };
 }
 
-export async function updateContact(params: {
+export async function updateContact(client: Client, params: {
   id: string;
   givenName?: string;
   surname?: string;
@@ -75,13 +72,11 @@ export async function updateContact(params: {
   personalNotes?: string;
 }) {
   const { id, ...patch } = params;
-  const client = getGraphClient();
   await client.api(`/me/contacts/${id}`).patch(patch);
   return { success: true, message: "Kontakt aktualisiert." };
 }
 
-export async function deleteContact(id: string) {
-  const client = getGraphClient();
+export async function deleteContact(client: Client, id: string) {
   await client.api(`/me/contacts/${id}`).delete();
   return { success: true, message: "Kontakt gelöscht." };
 }
