@@ -39,7 +39,7 @@ import {
 import {
   listOneDriveFiles, searchOneDrive, getOneDriveFileInfo,
   createOneDriveFolder, uploadOneDriveFile, deleteOneDriveItem,
-  moveOneDriveItem, renameOneDriveItem, copyOneDriveItem,
+  moveOneDriveItem, renameOneDriveItem,
 } from "./tools/onedrive.js";
 import { listContacts, getContact, createContact, updateContact, deleteContact } from "./tools/contacts.js";
 import { listTeams, listChannels, listChannelMessages, sendChannelMessage, listChats, listChatMessages, sendChatMessage } from "./tools/teams.js";
@@ -598,19 +598,6 @@ function createMcpServer(client: Client): Server {
           required: ["itemId", "newName"],
         },
       },
-      {
-        name: "copy_onedrive_item",
-        description: "Kopiert eine Datei oder einen Ordner in OneDrive",
-        inputSchema: {
-          type: "object",
-          properties: {
-            itemId: { type: "string", description: "ID der Datei oder des Ordners" },
-            destinationParentId: { type: "string", description: "ID des Zielordners" },
-            newName: { type: "string", description: "Name der Kopie (optional)" },
-          },
-          required: ["itemId", "destinationParentId"],
-        },
-      },
       // ── Contacts ─────────────────────────────────────────────────────
       {
         name: "list_contacts",
@@ -923,7 +910,6 @@ function createMcpServer(client: Client): Server {
         case "delete_onedrive_item":           result = await deleteOneDriveItem(client, args as any); break;
         case "move_onedrive_item":             result = await moveOneDriveItem(client, args as any); break;
         case "rename_onedrive_item":           result = await renameOneDriveItem(client, args as any); break;
-        case "copy_onedrive_item":             result = await copyOneDriveItem(client, args as any); break;
         // Contacts
         case "list_contacts":                  result = await listContacts(client, args as any); break;
         case "get_contact":                    result = await getContact(client, (args as any).id); break;
@@ -1059,8 +1045,15 @@ app.use(entraAuthMiddleware);
 
 // StreamableHTTP Transport (neueres Protokoll)
 app.all("/mcp", async (req, res) => {
-  const graphToken = await getGraphTokenViaObo(req.accessToken!);
-  const client = getGraphClient(graphToken);
+  let client: Client;
+  try {
+    const graphToken = await getGraphTokenViaObo(req.accessToken!);
+    client = getGraphClient(graphToken);
+  } catch (err) {
+    console.error("[OBO] Token-Exchange fehlgeschlagen:", err);
+    res.status(500).json({ error: `Graph Token-Exchange fehlgeschlagen: ${(err as Error).message}` });
+    return;
+  }
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   const server = createMcpServer(client);
   try {
@@ -1089,8 +1082,15 @@ const sseSessions = new Map<string, SseSession>();
 
 app.get("/sse", async (req, res) => {
   console.log("GET /sse - neue Verbindung");
-  const graphToken = await getGraphTokenViaObo(req.accessToken!);
-  const client = getGraphClient(graphToken);
+  let client: Client;
+  try {
+    const graphToken = await getGraphTokenViaObo(req.accessToken!);
+    client = getGraphClient(graphToken);
+  } catch (err) {
+    console.error("[OBO] Token-Exchange fehlgeschlagen (SSE):", err);
+    res.status(500).json({ error: `Graph Token-Exchange fehlgeschlagen: ${(err as Error).message}` });
+    return;
+  }
   const transport = new SSEServerTransport("/messages", res);
   sseSessions.set(transport.sessionId, { transport, client });
   res.on("close", () => sseSessions.delete(transport.sessionId));
