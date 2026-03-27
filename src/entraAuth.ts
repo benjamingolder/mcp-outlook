@@ -20,8 +20,9 @@ const tenantId = process.env.ENTRA_TENANT_ID!;
 const clientId = process.env.ENTRA_CLIENT_ID!;
 const appUrl = process.env.APP_URL ?? "";
 
+// Use common endpoint — issuer is validated in jwtVerify below
 const JWKS = createRemoteJWKSet(
-  new URL(`https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`)
+  new URL("https://login.microsoftonline.com/common/discovery/v2.0/keys")
 );
 
 export async function entraAuthMiddleware(
