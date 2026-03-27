@@ -45,11 +45,7 @@ import { listContacts, getContact, createContact, updateContact, deleteContact }
 import { listTeams, listChannels, listChannelMessages, sendChannelMessage, listChats, listChatMessages, sendChatMessage } from "./tools/teams.js";
 import { listNotebooks, listSections, listPages, getPage, createPage } from "./tools/onenote.js";
 import { listPlans, listMyPlannerTasks, listBuckets, listPlanTasks, createPlannerTask, updatePlannerTask, deletePlannerTask } from "./tools/planner.js";
-import { listWorksheets, getRange, updateRange, getUsedRange } from "./tools/excel.js";
-import { listRelevantPeople, listTrendingDocuments, listUsedDocuments, listSharedDocuments } from "./tools/people.js";
 import { listUsers, getUser, listGroups, listGroupMembers, addGroupMember, removeGroupMember } from "./tools/directory.js";
-import { getMyPresence, getUserPresence, getPresenceForUsers, setMyPresence } from "./tools/presence.js";
-import { listBookingBusinesses, listBookingServices, listBookingAppointments, createBookingAppointment, cancelBookingAppointment } from "./tools/bookings.js";
 
 function createMcpServer(client: Client): Server {
   const server = new Server(
@@ -825,72 +821,6 @@ function createMcpServer(client: Client): Server {
         description: "Löscht eine Planner-Aufgabe",
         inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] },
       },
-      // ── Excel ─────────────────────────────────────────────────────────
-      {
-        name: "list_worksheets",
-        description: "Listet Tabellenblätter einer Excel-Datei auf",
-        inputSchema: {
-          type: "object",
-          properties: { fileId: { type: "string" }, driveId: { type: "string", description: "Optional: Drive-ID (z.B. SharePoint)" } },
-          required: ["fileId"],
-        },
-      },
-      {
-        name: "get_range",
-        description: "Liest einen Zellenbereich aus einer Excel-Datei",
-        inputSchema: {
-          type: "object",
-          properties: {
-            fileId: { type: "string" }, worksheetId: { type: "string" },
-            address: { type: "string", description: "z.B. A1:C10" }, driveId: { type: "string" },
-          },
-          required: ["fileId", "worksheetId", "address"],
-        },
-      },
-      {
-        name: "get_used_range",
-        description: "Liest den gesamten benutzten Bereich eines Tabellenblatts",
-        inputSchema: {
-          type: "object",
-          properties: { fileId: { type: "string" }, worksheetId: { type: "string" }, driveId: { type: "string" } },
-          required: ["fileId", "worksheetId"],
-        },
-      },
-      {
-        name: "update_range",
-        description: "Schreibt Werte in einen Zellenbereich einer Excel-Datei",
-        inputSchema: {
-          type: "object",
-          properties: {
-            fileId: { type: "string" }, worksheetId: { type: "string" },
-            address: { type: "string" },
-            values: { type: "array", items: { type: "array" }, description: "2D-Array mit Zellenwerten" },
-            driveId: { type: "string" },
-          },
-          required: ["fileId", "worksheetId", "address", "values"],
-        },
-      },
-      // ── People & Insights ─────────────────────────────────────────────
-      {
-        name: "list_relevant_people",
-        description: "Listet relevante Personen basierend auf deiner Kommunikation auf",
-        inputSchema: { type: "object", properties: { top: { type: "number" }, search: { type: "string" } } },
-      },
-      {
-        name: "list_trending_documents",
-        description: "Listet Dokumente auf, die gerade in deinem Umfeld trending sind",
-        inputSchema: { type: "object", properties: { top: { type: "number" } } },
-      },
-      {
-        name: "list_used_documents",
-        description: "Listet zuletzt verwendete Dokumente auf",
-        inputSchema: { type: "object", properties: { top: { type: "number" } } },
-      },
-      {
-        name: "list_shared_documents",
-        description: "Listet Dokumente auf, die mit dir geteilt wurden",
-        inputSchema: { type: "object", properties: { top: { type: "number" } } },
-      },
       // ── Directory ─────────────────────────────────────────────────────
       {
         name: "list_users",
@@ -938,92 +868,6 @@ function createMcpServer(client: Client): Server {
           type: "object",
           properties: { groupId: { type: "string" }, userId: { type: "string" } },
           required: ["groupId", "userId"],
-        },
-      },
-      // ── Presence ──────────────────────────────────────────────────────
-      {
-        name: "get_my_presence",
-        description: "Liest deinen eigenen Teams-Präsenzstatus",
-        inputSchema: { type: "object", properties: {} },
-      },
-      {
-        name: "get_user_presence",
-        description: "Liest den Präsenzstatus eines bestimmten Benutzers",
-        inputSchema: { type: "object", properties: { userId: { type: "string" } }, required: ["userId"] },
-      },
-      {
-        name: "get_presence_for_users",
-        description: "Liest den Präsenzstatus mehrerer Benutzer auf einmal",
-        inputSchema: {
-          type: "object",
-          properties: { userIds: { type: "array", items: { type: "string" } } },
-          required: ["userIds"],
-        },
-      },
-      {
-        name: "set_my_presence",
-        description: "Setzt deinen eigenen Teams-Präsenzstatus",
-        inputSchema: {
-          type: "object",
-          properties: {
-            availability: { type: "string", enum: ["Available", "Busy", "DoNotDisturb", "BeRightBack", "Away", "Offline"] },
-            activity: { type: "string", description: "z.B. Available, InACall, InAMeeting, Away" },
-            expirationDuration: { type: "string", description: "ISO 8601 Dauer, z.B. PT1H (Standard: 1 Stunde)" },
-          },
-          required: ["availability", "activity"],
-        },
-      },
-      // ── Bookings ──────────────────────────────────────────────────────
-      {
-        name: "list_booking_businesses",
-        description: "Listet alle Microsoft Bookings Unternehmen auf",
-        inputSchema: { type: "object", properties: {} },
-      },
-      {
-        name: "list_booking_services",
-        description: "Listet Services eines Bookings-Unternehmens auf",
-        inputSchema: { type: "object", properties: { businessId: { type: "string" } }, required: ["businessId"] },
-      },
-      {
-        name: "list_booking_appointments",
-        description: "Listet Termine eines Bookings-Unternehmens auf",
-        inputSchema: {
-          type: "object",
-          properties: {
-            businessId: { type: "string" },
-            start: { type: "string", description: "Von (ISO 8601)" },
-            end: { type: "string", description: "Bis (ISO 8601)" },
-          },
-          required: ["businessId"],
-        },
-      },
-      {
-        name: "create_booking_appointment",
-        description: "Erstellt einen neuen Bookings-Termin",
-        inputSchema: {
-          type: "object",
-          properties: {
-            businessId: { type: "string" }, serviceId: { type: "string" },
-            startDateTime: { type: "string" }, endDateTime: { type: "string" },
-            timeZone: { type: "string", description: "Standard: Europe/Berlin" },
-            customerName: { type: "string" }, customerEmail: { type: "string" },
-            customerPhone: { type: "string" },
-            staffMemberIds: { type: "array", items: { type: "string" } },
-            notes: { type: "string" },
-          },
-          required: ["businessId", "serviceId", "startDateTime", "endDateTime", "customerName", "customerEmail"],
-        },
-      },
-      {
-        name: "cancel_booking_appointment",
-        description: "Storniert einen Bookings-Termin",
-        inputSchema: {
-          type: "object",
-          properties: {
-            businessId: { type: "string" }, appointmentId: { type: "string" },
-            reason: { type: "string" },
-          },
-          required: ["businessId", "appointmentId"],
         },
       },
     ],
@@ -1108,16 +952,6 @@ function createMcpServer(client: Client): Server {
         case "create_planner_task":            result = await createPlannerTask(client, args as any); break;
         case "update_planner_task":            result = await updatePlannerTask(client, args as any); break;
         case "delete_planner_task":            result = await deletePlannerTask(client, args as any); break;
-        // Excel
-        case "list_worksheets":                result = await listWorksheets(client, args as any); break;
-        case "get_range":                      result = await getRange(client, args as any); break;
-        case "get_used_range":                 result = await getUsedRange(client, args as any); break;
-        case "update_range":                   result = await updateRange(client, args as any); break;
-        // People & Insights
-        case "list_relevant_people":           result = await listRelevantPeople(client, args as any); break;
-        case "list_trending_documents":        result = await listTrendingDocuments(client, args as any); break;
-        case "list_used_documents":            result = await listUsedDocuments(client, args as any); break;
-        case "list_shared_documents":          result = await listSharedDocuments(client, args as any); break;
         // Directory
         case "list_users":                     result = await listUsers(client, args as any); break;
         case "get_user":                       result = await getUser(client, args as any); break;
@@ -1125,17 +959,6 @@ function createMcpServer(client: Client): Server {
         case "list_group_members":             result = await listGroupMembers(client, args as any); break;
         case "add_group_member":               result = await addGroupMember(client, args as any); break;
         case "remove_group_member":            result = await removeGroupMember(client, args as any); break;
-        // Presence
-        case "get_my_presence":                result = await getMyPresence(client); break;
-        case "get_user_presence":              result = await getUserPresence(client, args as any); break;
-        case "get_presence_for_users":         result = await getPresenceForUsers(client, args as any); break;
-        case "set_my_presence":                result = await setMyPresence(client, args as any); break;
-        // Bookings
-        case "list_booking_businesses":        result = await listBookingBusinesses(client); break;
-        case "list_booking_services":          result = await listBookingServices(client, args as any); break;
-        case "list_booking_appointments":      result = await listBookingAppointments(client, args as any); break;
-        case "create_booking_appointment":     result = await createBookingAppointment(client, args as any); break;
-        case "cancel_booking_appointment":     result = await cancelBookingAppointment(client, args as any); break;
         default:
           throw new McpError(ErrorCode.MethodNotFound, `Unbekanntes Tool: ${name}`);
       }
